@@ -1041,9 +1041,40 @@
           renderAdminPanel();
         }
       };
+      // Export Portable HTML — bakes current config into a standalone file
+      // that works on any device without needing localStorage. (FIX-001)
+      const portableBtn = document.createElement('button');
+      portableBtn.textContent = 'Export Portable HTML';
+      portableBtn.style.background = '#2d7a31';
+      portableBtn.onclick = () => {
+        try {
+          const liveConfig = JSON.stringify(config, null, 10);
+          const source = document.documentElement.outerHTML;
+          // Replace the defaultConfig block with the current live config so the
+          // downloaded file opens with all settings baked in on any device.
+          const marker = /const defaultConfig\s*=\s*\{[\s\S]*?\}\s*;\s*(?=\/\/\s*Storage)/;
+          if (!marker.test(source)) {
+            alert('Could not locate config block in source. Export failed.');
+            return;
+          }
+          const patched = source.replace(marker,
+            'const defaultConfig = ' + liveConfig + ';\n\n    ');
+          const blob = new Blob([patched], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const today = new Date().toISOString().slice(0,10);
+          a.download = 'gnb-configurator-' + today + '.html';
+          a.click();
+          URL.revokeObjectURL(url);
+        } catch(err) {
+          alert('Export failed: ' + err.message);
+        }
+      };
       tools.appendChild(exportBtn);
       tools.appendChild(importBtn);
       tools.appendChild(resetBtn);
+      tools.appendChild(portableBtn);
       advWrap.appendChild(tools);
       details.appendChild(advWrap);
       adv.appendChild(details);
