@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GNB Configurator — Live Demo</title>
+  <style>
+    :root {
+      --primary: #3a9a3e;
+      --secondary: #2d7a31;
+      --background: #f8f8f8;
+      --text: #1a1a1a;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--background); color: var(--text); }
+
+    /* ── Demo banner ── */
+    #demoBanner {
+      background: #1a1a1a; color: #fff;
+      padding: 0.45rem 1rem;
+      display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap;
+      font-size: 0.85rem; letter-spacing: 0.03em;
+    }
+    #demoBanner span { opacity: 0.65; }
+    #demoProgressBar { width: 180px; height: 6px; background: #444; border-radius: 3px; overflow: hidden; }
+    #demoProgressFill { height: 100%; background: var(--primary); width: 0%; transition: width 0.5s ease; }
+    #demoStepLabel { font-weight: bold; font-size: 0.82rem; min-width: 220px; }
+    #restartBtn { padding: 0.3rem 0.8rem; font-size: 0.8rem; background: #3a9a3e; border: none; color: #fff; border-radius: 4px; cursor: pointer; }
+
+    /* ── Run badge ── */
+    #runBadge {
+      background: var(--secondary); color: #fff;
+      text-align: center; padding: 0.3rem;
+      font-size: 0.8rem; font-weight: bold; letter-spacing: 0.05em;
+      transition: opacity 0.4s;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--primary); color: #fff;
+      padding: 0.9rem 1.2rem;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    }
+    header h1 { margin: 0; font-size: 1.35rem; }
+    #priceBanner { font-weight: bold; font-size: 1rem; }
+
+    /* ── Step dots ── */
+    #stepDots { display: flex; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem 0; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; background: #ccc; transition: background 0.3s; }
+    .dot.active { background: var(--primary); }
+    .dot.done   { background: var(--secondary); }
+
+    /* ── App ── */
+    #app { max-width: 900px; margin: 0 auto; padding: 1rem; }
+    .step { margin-bottom: 2rem; }
+    .step h2 { margin-top: 0; font-size: 1.3rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.25rem; }
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; font-weight: bold; margin-bottom: 0.3rem; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field input:focus, .field textarea:focus {
+      outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(58,154,62,0.2);
+    }
+    .btn-row { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.25rem; flex-wrap: wrap; }
+    button {
+      background: var(--primary); color: #fff; border: none;
+      padding: 0.65rem 1.1rem; font-size: 1rem; border-radius: 4px; cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button:hover:not(:disabled) { background: var(--secondary); }
+    button:active:not(:disabled) { transform: scale(0.97); }
+    button:disabled { background: #ccc; cursor: default; }
+
+    /* ── Cards ── */
+    .card-list { display: grid; gap: 1rem; }
+    @media (min-width: 600px) { .card-list { grid-template-columns: repeat(2, 1fr); } }
+    .card {
+      border: 2px solid #ddd; border-radius: 6px; padding: 0.85rem; cursor: pointer;
+      display: flex; flex-direction: column;
+      transition: border-color 0.25s, box-shadow 0.25s, transform 0.15s;
+    }
+    .card:hover { border-color: #aaa; }
+    .card.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(58,154,62,0.2); transform: translateY(-2px); }
+    .card .price { margin-top: auto; padding-top: 0.5rem; font-weight: bold; color: var(--primary); }
+
+    /* ── Checkbox fields ── */
+    .check-field {
+      display: flex; align-items: center; gap: 0.65rem; margin-bottom: 1rem;
+      padding: 0.75rem; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;
+      transition: border-color 0.25s, background 0.25s;
+    }
+    .check-field.checked { border-color: var(--primary); background: rgba(58,154,62,0.05); }
+    .check-field input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+    .check-field label { font-weight: bold; cursor: pointer; margin: 0; }
+
+    /* ── Split footage ── */
+    .footage-split {
+      border: 2px solid var(--primary); border-radius: 8px;
+      padding: 1rem; margin-bottom: 1.2rem; background: rgba(58,154,62,0.04);
+    }
+    .footage-split h3 { margin: 0 0 0.75rem; font-size: 1rem; color: var(--secondary); }
+    .footage-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.5rem; }
+    .footage-row label { font-weight: bold; font-size: 0.9rem; margin-bottom: 0.25rem; display: block; }
+    .footage-row input { width: 100%; padding: 0.45rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+    .footage-total {
+      margin-top: 0.6rem; padding: 0.5rem 0.75rem;
+      background: var(--primary); color: #fff; border-radius: 4px;
+      font-weight: bold; font-size: 0.95rem; text-align: right;
+    }
+    .footage-hint {
+      font-size: 0.82rem; color: #666; margin-bottom: 0.75rem; font-style: italic;
+    }
+
+    /* ── Summary ── */
+    .summary-list { list-style: none; padding: 0; margin: 0; }
+    .summary-list li { padding: 0.55rem 0; border-bottom: 1px solid #eee; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .summary-list li:last-child { border-bottom: none; }
+    .summary-list .lbl { font-weight: bold; min-width: 170px; }
+    .summary-total {
+      font-size: 1.3rem; color: var(--primary); font-weight: bold;
+      margin-top: 1rem; padding: 0.75rem;
+      background: rgba(58,154,62,0.08); border-radius: 6px; text-align: center;
+    }
+
+    /* ── "Run again" callout ── */
+    .run-again-callout {
+      margin-top: 1.25rem; padding: 1rem 1.2rem;
+      border: 2px dashed var(--primary); border-radius: 8px;
+      background: rgba(58,154,62,0.04);
+    }
+    .run-again-callout h3 { margin: 0 0 0.4rem; color: var(--secondary); font-size: 1rem; }
+    .run-again-callout p  { margin: 0 0 0.75rem; font-size: 0.9rem; color: #444; }
+
+    /* ── Ripple ── */
+    .ripple {
+      position: fixed; pointer-events: none; border-radius: 50%;
+      width: 40px; height: 40px; background: rgba(58,154,62,0.35);
+      transform: translate(-50%, -50%) scale(0);
+      animation: rippleAnim 0.5s ease-out forwards; z-index: 9999;
+    }
+    @keyframes rippleAnim { to { transform: translate(-50%, -50%) scale(3); opacity: 0; } }
+
+    #adminBtn { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- Demo banner -->
+<div id="demoBanner">
+  <span>DEMO MODE</span>
+  <div id="demoProgressBar"><div id="demoProgressFill"></div></div>
+  <div id="demoStepLabel">Starting…</div>
+  <button id="restartBtn">&#8635; Restart</button>
+</div>
+
+<!-- Run badge -->
+<div id="runBadge">RUN 1 OF 2 — Badrock Canyon + Granite Stamp</div>
+
+<!-- App header -->
+<header>
+  <div style="display:flex;align-items:center;">
+    <h1 id="companyName">Great Northern Borders</h1>
+  </div>
+  <div id="priceBanner"></div>
+</header>
+
+<!-- Step dots -->
+<div id="stepDots">
+  <div class="dot" id="dot0" title="Customer Info"></div>
+  <div class="dot" id="dot1" title="Choose Profile"></div>
+  <div class="dot" id="dot2" title="Choose Stamp"></div>
+  <div class="dot" id="dot3" title="Extras"></div>
+  <div class="dot" id="dot4" title="Footage"></div>
+  <div class="dot" id="dot5" title="Notes"></div>
+  <div class="dot" id="dot6" title="Summary"></div>
+</div>
+
+<main id="app"></main>
+<button id="adminBtn">⚙</button>
+
+<script>
+/* ═══════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════ */
+const config = {
+  business: {
+    companyName: 'Great Northern Borders',
+    submissionEmail: 'quotes@greatnorthernborders.com'
+  },
+  branding: { primaryColor: '#3A9A3E', secondaryColor: '#2D7A31', backgroundColor: '#F8F8F8', textColor: '#1A1A1A' },
+  pricing:  { base: 10.0, cableEnabled: true, cableAdder: 0.75, colorEnabled: true, colorAdder: 0.50 },
+  products: {
+    profiles: [
+      { id: 'great',     name: 'Great Northern', desc: 'Our signature design.',     series: 'Mountain',   price: 0   },
+      { id: 'mountain',  name: 'Badrock Canyon',  desc: 'Beautiful stone textures.', series: 'Mountain',   price: 2.5 },
+      { id: 'scapegoat', name: 'Scapegoat',       desc: 'Rugged, rustic edging.',    series: 'Wilderness', price: 3.5 }
+    ],
+    stamps: [
+      { id: 'no',      name: 'No Stamp',   desc: 'Smooth finish with no texture.', series: 'Basic',      price: 0   },
+      { id: 'granite', name: 'Granite',    desc: 'Granite texture stamping.',      series: 'Mountain',   price: 1.5 },
+      { id: 'river',   name: 'River Rock', desc: 'River rock texture.',            series: 'Wilderness', price: 2.0 }
+    ]
+  },
+  labels: {
+    stepCustomer: 'Customer Info',   stepProfile: 'Choose Profile',
+    stepStamp:    'Choose Stamp',    stepOptions: 'Extras',
+    stepFootage:  'Footage',         stepNotes:   'Notes',
+    stepSummary:  'Summary',
+    btnNext: 'Next →', btnBack: '← Back', btnSubmit: 'Send Estimate', btnPrint: 'Print'
+  },
+  features: { enableCable: true, enableColor: true, enableNotes: true, enablePrint: true, enableEmail: true }
+};
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+let state = {
+  step: 0,
+  customer: { name: '', email: '', phone: '', address: '' },
+  profileId: null, stampId: null,
+  cable: false, color: false,
+  // Split footage: keyed by profile id + a "main" total
+  footageSplit: {},   // { profileId: footage }
+  footage: 0,
+  notes: ''
+};
+
+/* ═══════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════ */
+const TOTAL_STEPS = 7;
+function fmt(n) { return '$' + Number(n).toFixed(2); }
+function getProfile(id) { return config.products.profiles.find(p => p.id === id); }
+function getStamp(id)   { return config.products.stamps.find(s => s.id === id); }
+function groupBy(arr, key) {
+  return arr.reduce((a, i) => { (a[i[key]] = a[i[key]] || []).push(i); return a; }, {});
+}
+
+function calcPricing(overrideFootage) {
+  let pf = Number(config.pricing.base) || 0;
+  const prof = getProfile(state.profileId);
+  const stp  = getStamp(state.stampId);
+  if (prof) pf += Number(prof.price) || 0;
+  if (stp)  pf += Number(stp.price)  || 0;
+  if (config.pricing.cableEnabled && state.cable) pf += Number(config.pricing.cableAdder) || 0;
+  if (config.pricing.colorEnabled && state.color) pf += Number(config.pricing.colorAdder) || 0;
+  const ft = overrideFootage !== undefined ? overrideFootage : (Number(state.footage) || 0);
+  return { perFoot: pf, total: pf * ft };
+}
+
+function updateHeader() {
+  document.getElementById('companyName').textContent = config.business.companyName;
+  const pb = document.getElementById('priceBanner');
+  const p  = calcPricing();
+  pb.textContent = state.profileId ? fmt(p.perFoot) + '/ft' : '';
+}
+function updateDots() {
+  for (let i = 0; i < TOTAL_STEPS; i++) {
+    const d = document.getElementById('dot' + i);
+    if (!d) continue;
+    d.className = 'dot' + (i < state.step ? ' done' : i === state.step ? ' active' : '');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   DOM HELPERS
+═══════════════════════════════════════════ */
+function el(tag, cls) { const e = document.createElement(tag); if (cls) e.className = cls; return e; }
+function h2(text)     { const e = el('h2'); e.textContent = text; return e; }
+function mkBtn(text, onclick, id) {
+  const b = el('button'); b.textContent = text; b.onclick = onclick; if (id) b.id = id; return b;
+}
+
+/* ═══════════════════════════════════════════
+   RENDER STEPS
+═══════════════════════════════════════════ */
+function render() {
+  updateHeader(); updateDots();
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  [renderCustomer, renderProfile, renderStamp, renderOptions, renderFootage, renderNotes, renderSummary][state.step]?.(app);
+}
+
+/* ── Step 0: Customer ── */
+function renderCustomer(app) {
+  const step = el('div', 'step');
+  step.appendChild(h2(config.labels.stepCustomer));
+  ['name','email','phone','address'].forEach(key => {
+    const f = el('div', 'field');
+    const lbl = el('label'); lbl.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+    const inp = el('input'); inp.type = 'text'; inp.id = 'inp_' + key; inp.value = state.customer[key] || '';
+    inp.oninput = () => { state.customer[key] = inp.value; };
+    f.append(lbl, inp); step.appendChild(f);
+  });
+  const nav = el('div', 'btn-row');
+  nav.appendChild(mkBtn(config.labels.btnNext, () => { state.step = 1; render(); }, 'nextCustomerBtn'));
+  step.appendChild(nav); app.appendChild(step);
+}
+
+/* ── Step 1: Profile ── */
+function renderProfile(app) {
+  const step = el('div', 'step');
+  step.appendChild(h2(config.labels.stepProfile));
+  const seriesMap = groupBy(config.products.profiles, 'series');
+  Object.keys(seriesMap).forEach(series => {
+    const title = el('h3'); title.textContent = series; step.appendChild(title);
+    const list = el('div', 'card-list');
+    seriesMap[series].forEach(item => {
+      const card = el('div', 'card' + (state.profileId === item.id ? ' selected' : ''));
+      card.id = 'card_profile_' + item.id;
+      card.innerHTML = `<strong>${item.name}</strong><div>${item.desc}</div><div class="price">+${fmt(item.price)}/ft</div>`;
+      card.onclick = () => { state.profileId = item.id; render(); };
+      list.appendChild(card);
+    });
+    step.appendChild(list);
+  });
+  const nav = el('div', 'btn-row');
+  const next = mkBtn(config.labels.btnNext, () => { state.step = 2; render(); }, 'nextProfileBtn');
+  next.disabled = !state.profileId;
+  nav.append(mkBtn(config.labels.btnBack, () => { state.step = 0; render(); }), next);
+  step.appendChild(nav); app.appendChild(step);
+}
+
+/* ── Step 2: Stamp ── */
+function renderStamp(app) {
+  const step = el('div', 'step');
+  step.appendChild(h2(config.labels.stepStamp));
+  const seriesMap = groupBy(config.products.stamps, 'series');
+  Object.keys(seriesMap).forEach(series => {
+    const title = el('h3'); title.textContent = series; step.appendChild(title);
+    const list = el('div', 'card-list');
+    seriesMap[series].forEach(item => {
+      const card = el('div', 'card' + (state.stampId === item.id ? ' selected' : ''));
+      card.id = 'card_stamp_' + item.id;
+      card.innerHTML = `<strong>${item.name}</strong><div>${item.desc}</div><div class="price">+${fmt(item.price)}/ft</div>`;
+      card.onclick = () => { state.stampId = item.id; render(); };
+      list.appendChild(card);
+    });
+    step.appendChild(list);
+  });
+  const nav = el('div', 'btn-row');
+  const next = mkBtn(config.labels.btnNext, () => { state.step = 3; render(); }, 'nextStampBtn');
+  next.disabled = !state.stampId;
+  nav.append(mkBtn(config.labels.btnBack, () => { state.step = 1; render(); }), next);
+  step.appendChild(nav); app.appendChild(step);
+}
+
+/* ── Step 3: Options ── */
+function renderOptions(app) {
+  const step = el('div', 'step');
+  step.appendChild(h2(config.labels.stepOptions));
+  function makeCheck(id, fieldId, checked, label, onChange) {
+    const f = el('div', 'check-field' + (checked ? ' checked' : ''));
+    f.id = fieldId;
+    const cb = el('input'); cb.type = 'checkbox'; cb.id = id; cb.checked = checked;
+    cb.onchange = () => onChange(cb.checked, f);
+    const lbl = el('label'); lbl.htmlFor = id; lbl.textContent = label;
+    f.append(cb, lbl); return f;
+  }
+  if (config.features.enableCable && config.pricing.cableEnabled) {
+    step.appendChild(makeCheck('cableCb', 'cableField', !!state.cable,
+      `Cable reinforcement  (+${fmt(config.pricing.cableAdder)}/ft)`,
+      (v, f) => { state.cable = v; f.className = 'check-field' + (v ? ' checked' : ''); updateHeader(); }));
+  }
+  if (config.features.enableColor && config.pricing.colorEnabled) {
+    step.appendChild(makeCheck('colorCb', 'colorField', !!state.color,
+      `Integral colour  (+${fmt(config.pricing.colorAdder)}/ft)`,
+      (v, f) => { state.color = v; f.className = 'check-field' + (v ? ' checked' : ''); updateHeader(); }));
+  }
+  const nav = el('div', 'btn-row');
+  nav.append(
+    mkBtn(config.labels.btnBack, () => { state.step = 2; render(); }),
+    mkBtn(config.labels.btnNext, () => { state.step = 4; render(); }, 'nextOptionsBtn')
+  );
+  step.appendChild(nav); app.appendChild(step);
+}
+
+/* ── Step 4: Footage (with split-footage UI) ── */
+function renderFootage(app) {
+  const step = el('div', 'step');
+  step.appendChild(h2(config.labels.stepFootage));
+
+  // ── Simple total footage field ──
+  const simpleField = el('div', 'field');
+  const simpleLbl = el('label'); simpleLbl.textContent = 'Total linear feet';
+  const simpleInp = el('input'); simpleInp.type = 'number'; simpleInp.min = '0';
+  simpleInp.id = 'footageInp'; simpleInp.value = state.footage || '';
+  simpleInp.oninput = () => { state.footage = simpleInp.value; updateHeader(); render(); };
+  simpleField.append(simpleLbl, simpleInp);
+  step.appendChild(simpleField);
+
+  // ── Split footage callout ──
+  const splitBox = el('div', 'footage-split');
+  splitBox.id = 'footageSplitBox';
+  const splitTitle = el('h3');
+  splitTitle.textContent = '📐 Split Footage by Profile (optional)';
+  splitBox.appendChild(splitTitle);
+
+  const hint = el('p', 'footage-hint');
+  hint.textContent = 'Running two different profiles on the same job? Enter footage separately — each profile gets its own line-item pricing.';
+  splitBox.appendChild(hint);
+
+  const rowWrap = el('div', 'footage-row');
+  config.products.profiles.forEach(prof => {
+    const col = el('div');
+    const lbl = el('label'); lbl.textContent = prof.name + (prof.price ? ` (+${fmt(prof.price)}/ft)` : ' (base)');
+    const inp = el('input'); inp.type = 'number'; inp.min = '0'; inp.placeholder = '0';
+    inp.id = 'split_' + prof.id;
+    inp.value = (state.footageSplit[prof.id] || '');
+    inp.oninput = () => {
+      state.footageSplit[prof.id] = inp.value;
+      updateSplitTotal();
+    };
+    col.append(lbl, inp); rowWrap.appendChild(col);
+  });
+  splitBox.appendChild(rowWrap);
+
+  const totalBar = el('div', 'footage-total');
+  totalBar.id = 'splitTotalBar';
+  splitBox.appendChild(totalBar);
+  step.appendChild(splitBox);
+
+  function updateSplitTotal() {
+    let lines = [];
+    let grandTotal = 0;
+    config.products.profiles.forEach(prof => {
+      const ft = Number(state.footageSplit[prof.id]) || 0;
+      if (ft > 0) {
+        const p = calcPricing(ft);
+        // override profile for this line
+        const savedProfile = state.profileId;
+        state.profileId = prof.id;
+        const pp = calcPricing(ft);
+        state.profileId = savedProfile;
+        grandTotal += pp.total;
+        lines.push(`${prof.name}: ${ft} ft × ${fmt(pp.perFoot)}/ft = ${fmt(pp.total)}`);
+      }
+    });
+    if (lines.length > 0) {
+      totalBar.innerHTML = lines.join('<br>') + `<br>─────<br>Combined Total: ${fmt(grandTotal)}`;
+    } else {
+      totalBar.textContent = 'Enter footage above to see split totals';
+    }
+  }
+  updateSplitTotal();
+
+  const nav = el('div', 'btn-row');
+  const next = mkBtn(config.labels.btnNext, () => { state.step = 5; render(); }, 'nextFootageBtn');
+  next.disabled = !state.footage;
+  nav.append(mkBtn(config.labels.btnBack, () => { state.step = 3; render(); }), next);
+  step.appendChild(nav); app.appendChild(step);
+}
+
+/* ── Step 5: Notes ── */
+function renderNotes(app) {
+  const step = el('div', 'step');
+  step.appendChild(h2(config.labels.stepNotes));
+  const f = el('div', 'field');
+  const lbl = el('label'); lbl.textContent = 'Additional notes';
+  const ta = el('textarea'); ta.rows = 4; ta.id = 'notesArea'; ta.value = state.notes || '';
+  ta.oninput = () => { state.notes = ta.value; };
+  f.append(lbl, ta); step.appendChild(f);
+  const nav = el('div', 'btn-row');
+  nav.append(
+    mkBtn(config.labels.btnBack, () => { state.step = 4; render(); }),
+    mkBtn(config.labels.btnNext, () => { state.step = 6; render(); }, 'nextNotesBtn')
+  );
+  step.appendChild(nav); app.appendChild(step);
+}
+
+/* ── Step 6: Summary ── */
+function renderSummary(app) {
+  const step = el('div', 'step');
+  step.appendChild(h2(config.labels.stepSummary));
+  const pricing = calcPricing();
+  const prof = getProfile(state.profileId);
+  const stp  = getStamp(state.stampId);
+  const ul = el('ul', 'summary-list');
+  function addRow(label, value) {
+    const li = el('li');
+    li.innerHTML = `<span class="lbl">${label}</span><span>${value}</span>`;
+    ul.appendChild(li);
+  }
+  addRow('Customer',  state.customer.name);
+  addRow('Address',   state.customer.address);
+  addRow('Phone',     state.customer.phone);
+  addRow('Email',     state.customer.email);
+  if (prof) addRow('Profile', prof.name + (prof.price ? ` (+${fmt(prof.price)}/ft)` : ' (included)'));
+  if (stp)  addRow('Stamp',   stp.name  + (stp.price  ? ` (+${fmt(stp.price)}/ft)`  : ' (included)'));
+  if (config.pricing.cableEnabled) addRow('Cable reinforcement', state.cable ? `Yes (+${fmt(config.pricing.cableAdder)}/ft)` : 'No');
+  if (config.pricing.colorEnabled) addRow('Integral colour',     state.color ? `Yes (+${fmt(config.pricing.colorAdder)}/ft)` : 'No');
+  addRow('Footage', state.footage + ' ft');
+  addRow('Price per foot', fmt(pricing.perFoot));
+  if (state.notes) addRow('Notes', state.notes);
+  step.appendChild(ul);
+
+  const total = el('div', 'summary-total');
+  total.textContent = 'Estimated Total: ' + fmt(pricing.total);
+  step.appendChild(total);
+
+  // ── Run-again callout ──
+  const callout = el('div', 'run-again-callout');
+  callout.id = 'runAgainCallout';
+  const calloutH = el('h3'); calloutH.textContent = '🔄 Want to price a second style?';
+  const calloutP = el('p');
+  calloutP.textContent = 'Same customer, different profile or stamp — just run the configurator again. Each run generates its own line-item estimate so you can compare options side by side before sending.';
+  const runAgainBtn = mkBtn('Start New Style Run →', () => {
+    // Keep customer, reset product choices
+    state.step = 1;
+    state.profileId = null; state.stampId = null;
+    state.cable = false; state.color = false;
+    state.footage = 0; state.footageSplit = {}; state.notes = '';
+    render();
+  }, 'runAgainBtn');
+  callout.append(calloutH, calloutP, runAgainBtn);
+  step.appendChild(callout);
+
+  const nav = el('div', 'btn-row');
+  nav.append(
+    mkBtn(config.labels.btnBack, () => { state.step = 5; render(); }),
+    mkBtn(config.labels.btnPrint, () => window.print()),
+    mkBtn(config.labels.btnSubmit, () => alert('In production this sends the estimate to ' + config.business.submissionEmail))
+  );
+  step.appendChild(nav); app.appendChild(step);
+}
+
+/* ═══════════════════════════════════════════
+   DEMO AUTOMATION ENGINE
+═══════════════════════════════════════════ */
+const RUNS = [
+  {
+    label: 'RUN 1 OF 2 — Badrock Canyon + Granite Stamp',
+    profileId: 'mountain',
+    stampId:   'granite',
+    cable:     true,
+    color:     true,
+    footage:   '185',
+    footageSplit: { great: '60', mountain: '125' },  // show split: 60 ft Great Northern + 125 ft Badrock
+    notes:     'Front driveway border + back patio perimeter. Match existing stonework if possible.'
+  },
+  {
+    label: 'RUN 2 OF 2 — Scapegoat + River Rock Stamp',
+    profileId: 'scapegoat',
+    stampId:   'river',
+    cable:     false,
+    color:     true,
+    footage:   '240',
+    footageSplit: { scapegoat: '240' },
+    notes:     'Pool deck perimeter — client wants rustic look to complement landscaping.'
+  }
+];
+
+const STEP_LABELS = [
+  'Step 1 of 7 — Customer Info',
+  'Step 2 of 7 — Choose Profile',
+  'Step 3 of 7 — Choose Stamp',
+  'Step 4 of 7 — Extras',
+  'Step 5 of 7 — Footage',
+  'Step 6 of 7 — Notes',
+  'Step 7 of 7 — Summary'
+];
+
+const DEMO_CUSTOMER = {
+  name:    'Mike Halverson',
+  email:   'mike@halversonhomes.com',
+  phone:   '(406) 721-4892',
+  address: '2847 Glacier View Dr, Kalispell MT 59901'
+};
+
+function setDemoLabel(text) { document.getElementById('demoStepLabel').textContent = text; }
+function setProgress(frac)  { document.getElementById('demoProgressFill').style.width = (frac * 100) + '%'; }
+function setRunBadge(text)  { document.getElementById('runBadge').textContent = text; }
+
+function rippleAt(elem) {
+  if (!elem) return;
+  const r = elem.getBoundingClientRect();
+  const rip = document.createElement('div');
+  rip.className = 'ripple';
+  rip.style.left = (r.left + r.width  / 2) + 'px';
+  rip.style.top  = (r.top  + r.height / 2) + 'px';
+  document.body.appendChild(rip);
+  setTimeout(() => rip.remove(), 600);
+}
+
+function typeInto(inputEl, text, charDelay = 52) {
+  return new Promise(resolve => {
+    inputEl.focus();
+    let i = 0;
+    function next() {
+      if (i < text.length) {
+        inputEl.value += text[i++];
+        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+        setTimeout(next, charDelay + Math.random() * 28);
+      } else { inputEl.blur(); resolve(); }
+    }
+    next();
+  });
+}
+
+function pause(ms) { return new Promise(r => setTimeout(r, ms)); }
+function scrollTo(elem) { if (elem) elem.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+
+async function clickBtn(id, delay = 1400) {
+  await pause(delay);
+  const b = document.getElementById(id);
+  if (b) { scrollTo(b); await pause(300); rippleAt(b); await pause(200); b.click(); }
+  await pause(600);
+}
+
+/* ── Run a single full pass through the configurator ── */
+async function runPass(runData, isFirstRun) {
+  setRunBadge(runData.label);
+
+  /* STEP 0 — Customer (only on first run) */
+  if (isFirstRun) {
+    state.step = 0; render();
+    setDemoLabel(STEP_LABELS[0]); setProgress(0);
+    await pause(1000);
+    for (const key of ['name','email','phone','address']) {
+      await pause(350);
+      const inp = document.getElementById('inp_' + key);
+      if (inp) { scrollTo(inp); await typeInto(inp, DEMO_CUSTOMER[key], 46); state.customer[key] = DEMO_CUSTOMER[key]; await pause(300); }
+    }
+    await clickBtn('nextCustomerBtn', 1200);
+  } else {
+    // Second run: skip customer, jump straight to profile
+    state.step = 1; render();
+    await pause(800);
+  }
+
+  /* STEP 1 — Profile */
+  setDemoLabel(STEP_LABELS[1]); setProgress(1 / 6);
+  await pause(800);
+  const profileCard = document.getElementById('card_profile_' + runData.profileId);
+  if (profileCard) { scrollTo(profileCard); await pause(700); rippleAt(profileCard); profileCard.click(); await pause(1100); }
+  await clickBtn('nextProfileBtn', 1000);
+
+  /* STEP 2 — Stamp */
+  setDemoLabel(STEP_LABELS[2]); setProgress(2 / 6);
+  await pause(800);
+  const stampCard = document.getElementById('card_stamp_' + runData.stampId);
+  if (stampCard) { scrollTo(stampCard); await pause(700); rippleAt(stampCard); stampCard.click(); await pause(1100); }
+  await clickBtn('nextStampBtn', 1000);
+
+  /* STEP 3 — Extras */
+  setDemoLabel(STEP_LABELS[3]); setProgress(3 / 6);
+  await pause(800);
+  const cableCb = document.getElementById('cableCb');
+  const cableField = document.getElementById('cableField');
+  if (cableCb) {
+    scrollTo(cableField); await pause(600);
+    if (runData.cable && !cableCb.checked) {
+      rippleAt(cableField); cableCb.checked = true; cableCb.dispatchEvent(new Event('change', { bubbles: true })); await pause(700);
+    } else if (!runData.cable && cableCb.checked) {
+      rippleAt(cableField); cableCb.checked = false; cableCb.dispatchEvent(new Event('change', { bubbles: true })); await pause(700);
+    }
+  }
+  const colorCb = document.getElementById('colorCb');
+  const colorField = document.getElementById('colorField');
+  if (colorCb) {
+    scrollTo(colorField); await pause(600);
+    if (runData.color && !colorCb.checked) {
+      rippleAt(colorField); colorCb.checked = true; colorCb.dispatchEvent(new Event('change', { bubbles: true })); await pause(700);
+    }
+  }
+  await clickBtn('nextOptionsBtn', 1000);
+
+  /* STEP 4 — Footage + Split */
+  setDemoLabel(STEP_LABELS[4]); setProgress(4 / 6);
+  await pause(800);
+  const footageInp = document.getElementById('footageInp');
+  if (footageInp) { scrollTo(footageInp); await typeInto(footageInp, runData.footage, 110); state.footage = runData.footage; await pause(700); }
+
+  // Demonstrate split footage
+  const splitBox = document.getElementById('footageSplitBox');
+  if (splitBox) {
+    scrollTo(splitBox);
+    await pause(900);
+    for (const [profId, ft] of Object.entries(runData.footageSplit)) {
+      const splitInp = document.getElementById('split_' + profId);
+      if (splitInp) {
+        splitInp.focus();
+        await pause(400);
+        await typeInto(splitInp, String(ft), 100);
+        state.footageSplit[profId] = ft;
+        await pause(500);
+      }
+    }
+    await pause(1200); // let viewer read the split total
+  }
+  await clickBtn('nextFootageBtn', 1000);
+
+  /* STEP 5 — Notes */
+  setDemoLabel(STEP_LABELS[5]); setProgress(5 / 6);
+  await pause(800);
+  const notesArea = document.getElementById('notesArea');
+  if (notesArea) { scrollTo(notesArea); await typeInto(notesArea, runData.notes, 36); state.notes = runData.notes; await pause(700); }
+  await clickBtn('nextNotesBtn', 1200);
+
+  /* STEP 6 — Summary */
+  setDemoLabel(STEP_LABELS[6]); setProgress(6 / 6);
+  await pause(500);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  await pause(1500);
+
+  // Highlight the run-again callout on first run
+  if (isFirstRun) {
+    const callout = document.getElementById('runAgainCallout');
+    if (callout) {
+      scrollTo(callout);
+      callout.style.transition = 'background 0.5s';
+      callout.style.background = 'rgba(58,154,62,0.15)';
+      await pause(2000);
+      callout.style.background = '';
+    }
+  }
+}
+
+/* ── Full demo: two passes ── */
+async function runDemo() {
+  // Full reset
+  state = {
+    step: 0,
+    customer: { name: '', email: '', phone: '', address: '' },
+    profileId: null, stampId: null,
+    cable: false, color: false,
+    footageSplit: {}, footage: 0, notes: ''
+  };
+  render();
+  setProgress(0);
+  setDemoLabel('Starting…');
+  await pause(1000);
+
+  // ── Pass 1 ──
+  await runPass(RUNS[0], true);
+
+  // Brief pause between runs, then show "Run Again" click
+  setDemoLabel('Starting Run 2 — different style…');
+  await pause(1200);
+  const runAgainBtn = document.getElementById('runAgainBtn');
+  if (runAgainBtn) { scrollTo(runAgainBtn); await pause(500); rippleAt(runAgainBtn); await pause(400); runAgainBtn.click(); }
+  await pause(800);
+
+  // ── Pass 2 ──
+  await runPass(RUNS[1], false);
+
+  setDemoLabel('✓ Both runs complete — compare totals & send');
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+document.getElementById('restartBtn').addEventListener('click', runDemo);
+render();
+runDemo();
+</script>
+</body>
+</html>

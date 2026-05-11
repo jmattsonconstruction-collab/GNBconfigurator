@@ -10,6 +10,7 @@
 |---|---|
 | `index.html` | Main configurator — full-featured, step-by-step estimator with admin panel |
 | `configurator-pro-responsive.html` | Alternate/pro version — not yet fully reviewed |
+| `gnb-demo.html` | Auto-walkthrough demo file — self-running, no interaction required (see SESSION-002) |
 | `GNB_CONFIGURATOR_LOG.md` | This document |
 
 ---
@@ -105,6 +106,59 @@
 | SUGGEST-004 | `localStorage` unavailable warning banner (see ISSUE-002) | Very Low (~5 lines JS) | Medium — improves transparency on mobile |
 | SUGGEST-005 | Pricing field validation with visual error (see ISSUE-006) | Low (~20 lines JS) | Medium — prevents accidental $0 pricing |
 | SUGGEST-006 | Multi-run mode (already in config as `features.multiRun`) | Medium | High — allows multiple estimates per session without reload |
+
+---
+
+---
+
+## Session Log
+
+### SESSION-001 — Initial Audit & FIX-001
+- **Date:** 2026-05-11
+- **Summary:** Full audit of `index.html`. Identified ISSUE-001 through ISSUE-007. Applied FIX-001 (Export Portable HTML button). Logged improvement suggestions SUGGEST-001 through SUGGEST-006.
+
+---
+
+### SESSION-002 — Auto-Demo Walkthrough File
+- **Date:** 2026-05-11
+- **Requested by:** Boss
+- **Output file:** `gnb-demo.html`
+- **Summary:** Built a fully self-running demo HTML file that auto-progresses through all 7 configurator steps with realistic typing, card selection animations, and timed pauses before each "Next" click. No user interaction required — opens and runs automatically.
+- **Demo Run 1 — Badrock Canyon + Granite Stamp:**
+  - Customer: Mike Halverson, 2847 Glacier View Dr, Kalispell MT 59901
+  - Profile: Badrock Canyon (+$2.50/ft)
+  - Stamp: Granite (+$1.50/ft)
+  - Cable reinforcement: Yes (+$0.75/ft)
+  - Integral colour: Yes (+$0.50/ft)
+  - Footage: 185 ft total
+  - Split footage demonstrated: 60 ft Great Northern + 125 ft Badrock Canyon
+  - Notes: Front driveway border + back patio perimeter
+- **Demo Run 2 — Scapegoat + River Rock Stamp:**
+  - Triggered via the "Run Again" callout on the summary page (same customer, new style)
+  - Profile: Scapegoat (+$3.50/ft)
+  - Stamp: River Rock (+$2.00/ft)
+  - Cable reinforcement: No
+  - Integral colour: Yes (+$0.50/ft)
+  - Footage: 240 ft
+  - Notes: Pool deck perimeter — rustic look
+- **Key features demonstrated:**
+  1. Full 7-step walkthrough with realistic user simulation
+  2. Split footage UI — per-profile footage entry with live combined total
+  3. "Run Again" callout on summary page showing how to price a second style for the same customer without re-entering info
+  4. Progress bar, step dots, and run badge in demo banner
+  5. Restart button for looping the demo
+- **Notes / Assumptions:**
+  - `gnb-demo.html` is a standalone demo file and does not modify `index.html`
+  - Split footage UI in the demo is a visual demonstration of the capability; the underlying `index.html` footage step currently uses a single total field. If split-footage-per-profile is desired in the live tool, it should be implemented as a separate feature (see SUGGEST-007 below)
+
+---
+
+## Improvement Suggestions (continued)
+
+| ID | Suggestion | Effort | Value |
+|---|---|---|---|
+| SUGGEST-007 | Add split-footage-per-profile to live `index.html` footage step | Medium (~50 lines JS) | High — allows mixed-profile jobs to be priced accurately in a single estimate |
+| SUGGEST-008 | "Run Again" / multi-estimate mode in live tool (builds on `features.multiRun` flag already in config) | Medium | High — lets field staff compare two styles for the same customer and send both estimates at once |
 
 ---
 
