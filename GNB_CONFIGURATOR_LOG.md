@@ -213,3 +213,23 @@
 ---
 
 *Log maintained by Manus. Last updated: 2026-05-11.*
+
+### Session 7 — May 11, 2026
+
+**Scope:** Clarify requirements for full UI/UX editability, log decisions, and prepare to move to a Manus Project and build the workflow skill.
+
+| ID | Type | Description | Files Affected |
+|----|------|-------------|----------------|
+| REQ-001 | Feature | **Text:** Every piece of visible text in the app is editable from the Admin Panel. | Pending |
+| REQ-002 | Feature | **Images:** Every card, section, feature, and option has an image slot. Off by default. Auto-resized on upload. | Pending |
+| REQ-003 | Feature | **Visual/Theme:** Full color theme editor (primary, accent, text, button, background) and background image uploader with opacity slider. | Pending |
+| REQ-004 | Feature | **Export:** All visual, image, and text changes must survive Export Portable HTML. | Pending |
+| TASK-001 | Project | Build GNB workflow skill. | Pending |
+| TASK-002 | Project | Prepare project for migration to a Manus Project. | Pending |
+
+**Decisions:**
+- Rebuild will use the original `gnb-ops.html` as the base.
+- Prices: Plain = $10/ft, Great Northern = $25/ft. Other stamps blank until set by admin. Profiles (Slant, Square, Mow) have no price adder.
+- Auto-resize image uploader is required to eliminate manual prep.
+
+---
