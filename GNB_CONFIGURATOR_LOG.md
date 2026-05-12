@@ -24,6 +24,29 @@
 
 ## Session Log
 
+### Session 5 — May 11, 2026
+
+**Scope:** Full admin editability — every text label and image in the configurator now editable from the Admin Panel.
+
+**Trigger:** User discovered that while business info fields were editable, all step titles, button text, form labels, extras labels, and summary row labels were hardcoded. Profile/stamp cards had no image fields.
+
+| ID | Type | Description | Files Affected |
+|----|------|-------------|----------------|
+| FIX-012 | Feature | Added 19 new label fields to `defaultConfig.labels` | `index.html` |
+| FIX-013 | Feature | Added `imageUrl` field to all default profiles and stamps | `index.html` |
+| FIX-014 | Feature | All render functions updated to use config labels (no more hardcoded strings) | `index.html` |
+| FIX-015 | Feature | Profile and stamp cards display image when `imageUrl` is set | `index.html` |
+| FIX-016 | Feature | `makeImageField()` helper — URL input + file upload (base64) + live preview + clear | `index.html` |
+| FIX-017 | Feature | **Content & Labels** section added to Admin Panel — 30 editable text label fields | `index.html` |
+| FIX-018 | Feature | Image upload fields added to each Profile and Stamp card in admin product editor | `index.html` |
+| FIX-019 | Feature | Logo Image field (URL + upload) added to Content & Labels section | `index.html` |
+| FIX-020 | Fix | `makeImageField` moved before `renderList` to prevent ReferenceError on admin open | `index.html` |
+| ISSUE-003 | Resolved | Logo URL only → now supports file upload with base64 embed | `index.html` |
+
+**Tested:** Admin panel opens, all new fields visible and functional, image upload UI renders correctly, no JS errors. Verified in live browser test.
+
+---
+
 ### Session 4 — May 11, 2026
 
 **Scope:** Live test the GNB system, generate a tutorial presentation, and analyze the feasibility of a dedicated GNB Assistant Agent.

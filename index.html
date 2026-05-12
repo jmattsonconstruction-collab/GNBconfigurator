@@ -259,14 +259,14 @@
       },
       products: {
         profiles: [
-          { id: 'great', name: 'Great Northern', desc: 'Our signature design.', series: 'Mountain', price: 0 },
-          { id: 'mountain', name: 'Badrock Canyon', desc: 'Beautiful stone textures.', series: 'Mountain', price: 2.5 },
-          { id: 'scapegoat', name: 'Scapegoat', desc: 'Rugged, rustic edging.', series: 'Wilderness', price: 3.5 }
+          { id: 'great', name: 'Great Northern', desc: 'Our signature design.', series: 'Mountain', price: 0, imageUrl: '' },
+          { id: 'mountain', name: 'Badrock Canyon', desc: 'Beautiful stone textures.', series: 'Mountain', price: 2.5, imageUrl: '' },
+          { id: 'scapegoat', name: 'Scapegoat', desc: 'Rugged, rustic edging.', series: 'Wilderness', price: 3.5, imageUrl: '' }
         ],
         stamps: [
-          { id: 'no', name: 'No Stamp', desc: 'Smooth finish with no texture.', series: 'Basic', price: 0 },
-          { id: 'granite', name: 'Granite', desc: 'Granite texture stamping.', series: 'Mountain', price: 1.5 },
-          { id: 'river', name: 'River Rock', desc: 'River rock texture.', series: 'Wilderness', price: 2 }
+          { id: 'no', name: 'No Stamp', desc: 'Smooth finish with no texture.', series: 'Basic', price: 0, imageUrl: '' },
+          { id: 'granite', name: 'Granite', desc: 'Granite texture stamping.', series: 'Mountain', price: 1.5, imageUrl: '' },
+          { id: 'river', name: 'River Rock', desc: 'River rock texture.', series: 'Wilderness', price: 2, imageUrl: '' }
         ]
       },
       labels: {
@@ -280,7 +280,26 @@
         btnNext: 'Next →',
         btnBack: '← Back',
         btnSubmit: 'Send Estimate',
-        btnPrint: 'Print'
+        btnPrint: 'Print',
+        btnOps: '📋 Send to Ops Board',
+        fieldName: 'Name',
+        fieldEmail: 'Email',
+        fieldPhone: 'Phone',
+        fieldAddress: 'Address',
+        fieldNotesPlaceholder: 'Any additional details about the project…',
+        fieldFootage: 'Total linear feet',
+        fieldNotes: 'Additional notes',
+        labelCable: 'Cable reinforcement',
+        labelColor: 'Integral colour',
+        summaryCustomer: 'Customer',
+        summaryProfile: 'Profile',
+        summaryStamp: 'Stamp',
+        summaryCable: 'Cable reinforcement',
+        summaryColor: 'Integral colour',
+        summaryFootage: 'Footage',
+        summaryPerFoot: 'Price per foot',
+        summaryTotal: 'Total price',
+        summaryNotes: 'Notes'
       },
       features: {
         enableCable: true,
@@ -423,11 +442,17 @@
       step.className = 'step';
       step.innerHTML = `<h2>${config.labels.stepCustomer}</h2>`;
       // fields
+      const fieldLabelMap = {
+        name: config.labels.fieldName || 'Name',
+        email: config.labels.fieldEmail || 'Email',
+        phone: config.labels.fieldPhone || 'Phone',
+        address: config.labels.fieldAddress || 'Address'
+      };
       ['name', 'email', 'phone', 'address'].forEach(key => {
         const field = document.createElement('div');
         field.className = 'field';
         const lbl = document.createElement('label');
-        lbl.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+        lbl.textContent = fieldLabelMap[key];
         const inp = document.createElement('input');
         inp.type = 'text';
         inp.value = state.customer[key] || '';
@@ -475,7 +500,7 @@
         seriesMap[series].forEach(item => {
           const card = document.createElement('div');
           card.className = 'card' + (state.profileId === item.id ? ' selected' : '');
-          card.innerHTML = `<strong>${item.name}</strong><div>${item.desc}</div><div class="price">+${formatCurrency(item.price)}/ft</div>`;
+          card.innerHTML = `${item.imageUrl ? `<img src="${item.imageUrl}" style="width:100%;max-height:120px;object-fit:cover;border-radius:4px;margin-bottom:6px;">` : ''}<strong>${item.name}</strong><div>${item.desc}</div><div class="price">+${formatCurrency(item.price)}/ft</div>`;
           card.onclick = () => {
             state.profileId = item.id;
             // reset dependent selections
@@ -520,7 +545,7 @@
         seriesMap[series].forEach(item => {
           const card = document.createElement('div');
           card.className = 'card' + (state.stampId === item.id ? ' selected' : '');
-          card.innerHTML = `<strong>${item.name}</strong><div>${item.desc}</div><div class="price">+${formatCurrency(item.price)}/ft</div>`;
+          card.innerHTML = `${item.imageUrl ? `<img src="${item.imageUrl}" style="width:100%;max-height:120px;object-fit:cover;border-radius:4px;margin-bottom:6px;">` : ''}<strong>${item.name}</strong><div>${item.desc}</div><div class="price">+${formatCurrency(item.price)}/ft</div>`;
           card.onclick = () => {
             state.stampId = item.id;
             render();
@@ -553,7 +578,7 @@
         const field = document.createElement('div');
         field.className = 'field';
         const lbl = document.createElement('label');
-        lbl.textContent = `Cable reinforcement (+${formatCurrency(config.pricing.cableAdder)}/ft)`;
+        lbl.textContent = `${config.labels.labelCable || 'Cable reinforcement'} (+${formatCurrency(config.pricing.cableAdder)}/ft)`;
         const cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.checked = !!state.cable;
@@ -567,7 +592,7 @@
         const field = document.createElement('div');
         field.className = 'field';
         const lbl = document.createElement('label');
-        lbl.textContent = `Integral colour (+${formatCurrency(config.pricing.colorAdder)}/ft)`;
+        lbl.textContent = `${config.labels.labelColor || 'Integral colour'} (+${formatCurrency(config.pricing.colorAdder)}/ft)`;
         const cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.checked = !!state.color;
@@ -597,7 +622,7 @@
       const field = document.createElement('div');
       field.className = 'field';
       const lbl = document.createElement('label');
-      lbl.textContent = 'Total linear feet';
+      lbl.textContent = config.labels.fieldFootage || 'Total linear feet';
       const inp = document.createElement('input');
       inp.type = 'number';
       inp.min = '0';
@@ -633,7 +658,7 @@
       const field = document.createElement('div');
       field.className = 'field';
       const lbl = document.createElement('label');
-      lbl.textContent = 'Additional notes';
+      lbl.textContent = config.labels.fieldNotes || 'Additional notes';
       const ta = document.createElement('textarea');
       ta.rows = 4;
       ta.value = state.notes || '';
@@ -669,17 +694,17 @@
         li.innerHTML = `<strong>${label}:</strong> ${value}`;
         list.appendChild(li);
       }
-      addItem('Customer', `${state.customer.name} — ${state.customer.address}`);
+      addItem(config.labels.summaryCustomer || 'Customer', `${state.customer.name} — ${state.customer.address}`);
       const prof = getProfileById(state.profileId);
-      if (prof) addItem('Profile', prof.name + (prof.price ? ` (+${formatCurrency(prof.price)}/ft)` : ''));
+      if (prof) addItem(config.labels.summaryProfile || 'Profile', prof.name + (prof.price ? ` (+${formatCurrency(prof.price)}/ft)` : ''));
       const stp = getStampById(state.stampId);
-      if (stp) addItem('Stamp', stp.name + (stp.price ? ` (+${formatCurrency(stp.price)}/ft)` : ''));
-      if (config.pricing.cableEnabled) addItem('Cable reinforcement', state.cable ? `Yes (+${formatCurrency(config.pricing.cableAdder)}/ft)` : 'No');
-      if (config.pricing.colorEnabled) addItem('Integral colour', state.color ? `Yes (+${formatCurrency(config.pricing.colorAdder)}/ft)` : 'No');
-      addItem('Footage', `${state.footage} ft`);
-      addItem('Price per foot', formatCurrency(pricing.perFoot));
-      addItem('Total price', formatCurrency(pricing.total));
-      if (state.notes) addItem('Notes', state.notes);
+      if (stp) addItem(config.labels.summaryStamp || 'Stamp', stp.name + (stp.price ? ` (+${formatCurrency(stp.price)}/ft)` : ''));
+      if (config.pricing.cableEnabled) addItem(config.labels.summaryCable || 'Cable reinforcement', state.cable ? `Yes (+${formatCurrency(config.pricing.cableAdder)}/ft)` : 'No');
+      if (config.pricing.colorEnabled) addItem(config.labels.summaryColor || 'Integral colour', state.color ? `Yes (+${formatCurrency(config.pricing.colorAdder)}/ft)` : 'No');
+      addItem(config.labels.summaryFootage || 'Footage', `${state.footage} ft`);
+      addItem(config.labels.summaryPerFoot || 'Price per foot', formatCurrency(pricing.perFoot));
+      addItem(config.labels.summaryTotal || 'Total price', formatCurrency(pricing.total));
+      if (state.notes) addItem(config.labels.summaryNotes || 'Notes', state.notes);
       step.appendChild(list);
       const nav = document.createElement('div');
       nav.className = 'btn-row';
@@ -719,7 +744,7 @@
       }
       // ── SUBMIT TO GNB OPS (sends job to Google Sheets via webhook) ──
       const opsBtn = document.createElement('button');
-      opsBtn.textContent = '📋 Send to Ops Board';
+      opsBtn.textContent = config.labels.btnOps || '📋 Send to Ops Board';
       opsBtn.style.background = '#1B6CA8';
       opsBtn.onclick = () => { submitToOps(pricing, prof, stp); };
       nav.appendChild(opsBtn);
@@ -787,7 +812,7 @@
         alert('Job sent to Ops Board!\n\nTransfer Code: ' + code + '\n\nUse this code on any device to pull the job into the War Board.');
       }).catch(err => {
         opsBtn.disabled = false;
-        opsBtn.textContent = '📋 Send to Ops Board';
+        opsBtn.textContent = config.labels.btnOps || '📋 Send to Ops Board';
         alert('Failed to send: ' + err.message + '\n\nMake sure the Webhook URL is correct in Admin settings.');
       });
     }
@@ -956,6 +981,73 @@
         row.appendChild(lblEl);
         std.appendChild(row);
       });
+      // Helper: image field with URL input + file upload
+      function makeImageField(label, getValue, setValue) {
+        const wrap = document.createElement('div');
+        wrap.className = 'field';
+        const lbl = document.createElement('label');
+        lbl.textContent = label;
+        wrap.appendChild(lbl);
+        const preview = document.createElement('img');
+        preview.style.cssText = 'max-width:100%;max-height:80px;object-fit:contain;display:block;margin-bottom:6px;border-radius:4px;';
+        if (getValue()) { preview.src = getValue(); } else { preview.style.display = 'none'; }
+        wrap.appendChild(preview);
+        const urlRow = document.createElement('div');
+        urlRow.style.display = 'flex';
+        urlRow.style.gap = '6px';
+        urlRow.style.marginBottom = '4px';
+        const urlInp = document.createElement('input');
+        urlInp.type = 'text';
+        urlInp.placeholder = 'Paste image URL…';
+        urlInp.value = getValue() && !getValue().startsWith('data:') ? getValue() : '';
+        urlInp.style.flex = '1';
+        urlInp.oninput = () => {
+          setValue(urlInp.value);
+          preview.src = urlInp.value;
+          preview.style.display = urlInp.value ? 'block' : 'none';
+        };
+        urlRow.appendChild(urlInp);
+        wrap.appendChild(urlRow);
+        const uploadBtn = document.createElement('button');
+        uploadBtn.type = 'button';
+        uploadBtn.textContent = '↑ Upload Image';
+        uploadBtn.style.cssText = 'font-size:.8rem;padding:4px 10px;background:#555;';
+        uploadBtn.onclick = () => {
+          const fileInp = document.createElement('input');
+          fileInp.type = 'file';
+          fileInp.accept = 'image/*';
+          fileInp.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+              const dataUrl = ev.target.result;
+              setValue(dataUrl);
+              urlInp.value = '';
+              urlInp.placeholder = file.name + ' (uploaded)';
+              preview.src = dataUrl;
+              preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+          };
+          fileInp.click();
+        };
+        wrap.appendChild(uploadBtn);
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.textContent = 'Clear';
+        clearBtn.style.cssText = 'font-size:.8rem;padding:4px 10px;background:#c0392b;margin-left:4px;';
+        clearBtn.onclick = () => {
+          setValue('');
+          urlInp.value = '';
+          urlInp.placeholder = 'Paste image URL…';
+          preview.src = '';
+          preview.style.display = 'none';
+        };
+        wrap.appendChild(clearBtn);
+        return wrap;
+      }
+
       // product lists (profiles and stamps)
       function renderList(sectionTitle, arr, type) {
         const sec = document.createElement('div');
@@ -985,7 +1077,7 @@
             f.className = 'field';
             const lbl = document.createElement('label');
             lbl.textContent = key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
-            const inp = document.createElement(key === 'price' ? 'input' : 'input');
+            const inp = document.createElement('input');
             if (key === 'price') {
               inp.type = 'number';
               inp.step = '0.01';
@@ -1002,6 +1094,8 @@
             f.appendChild(inp);
             li.appendChild(f);
           });
+          // Image field with URL + upload
+          li.appendChild(makeImageField('Image (URL or Upload)', () => item.imageUrl || '', (v) => { item.imageUrl = v; }));
           sec.appendChild(li);
         });
         // Add new
@@ -1017,6 +1111,63 @@
       std.appendChild(renderList('Profiles', config.products.profiles, 'profile'));
       std.appendChild(renderList('Stamps', config.products.stamps, 'stamp'));
       content.appendChild(std);
+
+      // ── CONTENT & LABELS SECTION ──
+      const contentSec = document.createElement('div');
+      contentSec.className = 'admin-section';
+      contentSec.innerHTML = '<h3>Content &amp; Labels</h3><p style="font-size:.85rem;color:#666;margin-bottom:1rem;">Edit every text label and image shown to customers.</p>';
+
+      // Logo image
+      contentSec.appendChild(makeImageField('Logo Image', () => config.business.logoUrl, (v) => { config.business.logoUrl = v; renderHeader(); }));
+
+      // All text labels
+      const labelDefs = [
+        ['Step: Customer Info title', 'stepCustomer'],
+        ['Step: Choose Profile title', 'stepProfile'],
+        ['Step: Choose Stamp title', 'stepStamp'],
+        ['Step: Extras title', 'stepOptions'],
+        ['Step: Footage title', 'stepFootage'],
+        ['Step: Notes title', 'stepNotes'],
+        ['Step: Summary title', 'stepSummary'],
+        ['Button: Next', 'btnNext'],
+        ['Button: Back', 'btnBack'],
+        ['Button: Send Estimate', 'btnSubmit'],
+        ['Button: Print', 'btnPrint'],
+        ['Button: Send to Ops Board', 'btnOps'],
+        ['Field label: Name', 'fieldName'],
+        ['Field label: Email', 'fieldEmail'],
+        ['Field label: Phone', 'fieldPhone'],
+        ['Field label: Address', 'fieldAddress'],
+        ['Field label: Footage', 'fieldFootage'],
+        ['Field label: Notes', 'fieldNotes'],
+        ['Notes placeholder text', 'fieldNotesPlaceholder'],
+        ['Extras: Cable label', 'labelCable'],
+        ['Extras: Colour label', 'labelColor'],
+        ['Summary row: Customer', 'summaryCustomer'],
+        ['Summary row: Profile', 'summaryProfile'],
+        ['Summary row: Stamp', 'summaryStamp'],
+        ['Summary row: Cable', 'summaryCable'],
+        ['Summary row: Colour', 'summaryColor'],
+        ['Summary row: Footage', 'summaryFootage'],
+        ['Summary row: Price per foot', 'summaryPerFoot'],
+        ['Summary row: Total price', 'summaryTotal'],
+        ['Summary row: Notes', 'summaryNotes'],
+      ];
+      labelDefs.forEach(([displayName, key]) => {
+        const row = document.createElement('div');
+        row.className = 'field';
+        const lbl = document.createElement('label');
+        lbl.textContent = displayName;
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.value = config.labels[key] || '';
+        inp.oninput = () => { config.labels[key] = inp.value; };
+        row.appendChild(lbl);
+        row.appendChild(inp);
+        contentSec.appendChild(row);
+      });
+
+      content.appendChild(contentSec);
       // Advanced settings collapsible
       const adv = document.createElement('div');
       adv.className = 'admin-section';
