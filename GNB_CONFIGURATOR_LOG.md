@@ -24,6 +24,20 @@
 
 ## Session Log
 
+### Session 6 — May 11, 2026
+
+**Scope:** Deploy configurator as permanent hosted website on Vercel with auto-deploy from GitHub.
+
+| ID | Type | Description | Files Affected |
+|----|------|-------------|----------------|
+| FIX-021 | Deploy | Added `vercel.json` config for static HTML deployment | `vercel.json` |
+| FIX-022 | Deploy | Deployed to Vercel via GitHub repo connection — auto-deploys on every push to `main` | GitHub → Vercel |
+
+**Live URL:** https://gnbcurbconfigurator.vercel.app/  
+**Auto-deploy:** Every `git push` to `main` branch triggers a new deployment automatically. No manual steps needed after code changes.
+
+---
+
 ### Session 5 — May 11, 2026
 
 **Scope:** Full admin editability — every text label and image in the configurator now editable from the Admin Panel.
