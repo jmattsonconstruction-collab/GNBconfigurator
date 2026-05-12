@@ -238,6 +238,7 @@
         phone: '(406) 555‑0100',
         email: 'info@greatnorthernborders.com',
         submissionEmail: 'quotes@greatnorthernborders.com',
+        webhookUrl: '',
         website: 'https://greatnorthernborders.com',
         logoUrl: '',
         headerText: '',
@@ -716,8 +717,79 @@
           };
           nav.appendChild(sendBtn);
       }
+      // ── SUBMIT TO GNB OPS (sends job to Google Sheets via webhook) ──
+      const opsBtn = document.createElement('button');
+      opsBtn.textContent = '📋 Send to Ops Board';
+      opsBtn.style.background = '#1B6CA8';
+      opsBtn.onclick = () => { submitToOps(pricing, prof, stp); };
+      nav.appendChild(opsBtn);
+
       step.appendChild(nav);
       app.appendChild(step);
+    }
+
+    // ════════════════════════════════════════════
+    // SUBMIT TO GNB OPS — Webhook + Transfer Code
+    // ════════════════════════════════════════════
+    const GNB_WEBHOOK_URL = config.business.webhookUrl || '';
+
+    const TRANSFER_NOUNS = [
+      'clock','dog','muffin','river','hammer','eagle','stone','cedar',
+      'truck','badge','arrow','flame','moose','cabin','ridge','trail',
+      'storm','forge','steel','maple','aspen','creek','summit','wolf',
+      'bear','pine','slate','gravel','iron','copper','timber','boulder',
+      'falcon','canyon','mesa','drift','frost','ember','flint','sage',
+      'birch','oak','elk','hawk','bass','pike','trout','otter','lynx','fox'
+    ];
+
+    function generateTransferCode() {
+      const noun = TRANSFER_NOUNS[Math.floor(Math.random() * TRANSFER_NOUNS.length)];
+      const num = Math.floor(Math.random() * 90) + 10;
+      return noun + num;
+    }
+
+    function submitToOps(pricing, prof, stp) {
+      if (!GNB_WEBHOOK_URL) {
+        alert('Ops webhook not configured. Go to Admin → Business Info and paste your GNB Ops Web App URL into the Webhook URL field.');
+        return;
+      }
+      const code = generateTransferCode();
+      const jobData = {
+        name: state.customer.name || '',
+        phone: state.customer.phone || '',
+        email: state.customer.email || '',
+        address: state.customer.address || '',
+        type: 'hw',
+        stamp: stp ? stp.name : '',
+        footage: state.footage || '',
+        estimate: formatCurrency(pricing.total),
+        status: 'scheduled',
+        colorPalette: state.color ? ['Integral Color'] : [],
+        runs: [],
+        prepWork: '',
+        prepAmount: '',
+        bossNotes: '',
+        preNotes: state.notes || '',
+        transferCode: code
+      };
+
+      opsBtn.disabled = true;
+      opsBtn.textContent = 'Sending...';
+
+      fetch(GNB_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'submit-job', job: jobData }),
+        mode: 'no-cors'
+      }).then(() => {
+        opsBtn.textContent = '✓ Sent! Code: ' + code;
+        opsBtn.style.background = '#2E7D4F';
+        alert('Job sent to Ops Board!\n\nTransfer Code: ' + code + '\n\nUse this code on any device to pull the job into the War Board.');
+      }).catch(err => {
+        opsBtn.disabled = false;
+        opsBtn.textContent = '📋 Send to Ops Board';
+        alert('Failed to send: ' + err.message + '\n\nMake sure the Webhook URL is correct in Admin settings.');
+      });
     }
 
     // Admin panel logic.  When admin button is clicked the user is
@@ -827,7 +899,7 @@
       std.className = 'admin-section';
       std.innerHTML = '<h3>Standard Settings</h3>';
       // business info
-      ['companyName','phone','email','submissionEmail','website','logoUrl'].forEach(key => {
+      ['companyName','phone','email','submissionEmail','webhookUrl','website','logoUrl'].forEach(key => {
         const row = document.createElement('div');
         row.className = 'field';
         const lbl = document.createElement('label');
