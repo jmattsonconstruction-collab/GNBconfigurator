@@ -17,11 +17,29 @@
 | `apps-script/Index.html` | Google Apps Script frontend — War Board + Job Form web app |
 | `google-apps-script-webhook.js` | Legacy standalone webhook (superseded by Code.gs) |
 | `SETUP_GUIDE.md` | Step-by-step deployment instructions |
+| `tutorial_presentation/` | HTML-based presentation tutorial for first-time users |
 | `GNB_CONFIGURATOR_LOG.md` | This document |
 
 ---
 
 ## Session Log
+
+### Session 4 — May 11, 2026
+
+**Scope:** Live test the GNB system, generate a tutorial presentation, and analyze the feasibility of a dedicated GNB Assistant Agent.
+
+**Actions Taken:**
+1. **Live Testing:** Conducted end-to-end browser testing of `index.html`. Confirmed UI, calculations, form fields, and transfer code generation logic work flawlessly. Expected timeout on "Send to Ops Board" was observed due to the webhook not being live yet (expected behavior).
+2. **Tutorial Presentation:** Created a 6-slide HTML presentation (`tutorial_presentation/`) explaining the entire workflow (Configurator -> Transfer Code -> Ops Board -> Job Sheet -> Portable Export -> Quick Reference). This serves as a training tool for the team.
+3. **Cloud Backup:** Uploaded the `apps-script` folder and test notes to the user's Google Drive via `rclone` for easy deployment access.
+4. **Agent Analysis:** Drafted a comprehensive analysis on the feasibility and design of a dedicated "GNB Assistant Agent" (delivered to user).
+
+| ID | Type | Description | Files Affected |
+|----|------|-------------|----------------|
+| FIX-011 | Feature | Generated interactive HTML tutorial presentation | `tutorial_presentation/*` |
+| TST-001 | Test | Validated `index.html` UI and transfer code logic | `index.html` |
+
+---
 
 ### Session 3 — May 11, 2026
 

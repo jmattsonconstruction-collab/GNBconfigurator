@@ -1,0 +1,168 @@
+{
+  "project_info": {
+    "title": "Your Complete Job Workflow — From Estimate to War Board",
+    "created": 1778545611.992136,
+    "last_updated": 1778546204.4800634,
+    "total_slides": 13
+  },
+  "slides": [
+    {
+      "id": "welcome",
+      "state": "edited",
+      "pageNum": 1
+    },
+    {
+      "id": "big_picture",
+      "state": "edited",
+      "pageNum": 2
+    },
+    {
+      "id": "setup_backend",
+      "state": "edited",
+      "pageNum": 3
+    },
+    {
+      "id": "setup_connect",
+      "state": "edited",
+      "pageNum": 4
+    },
+    {
+      "id": "configurator_customer",
+      "state": "edited",
+      "pageNum": 5
+    },
+    {
+      "id": "configurator_profile",
+      "state": "edited",
+      "pageNum": 6
+    },
+    {
+      "id": "configurator_extras",
+      "state": "edited",
+      "pageNum": 7
+    },
+    {
+      "id": "configurator_summary",
+      "state": "edited",
+      "pageNum": 8
+    },
+    {
+      "id": "transfer_code",
+      "state": "edited",
+      "pageNum": 9
+    },
+    {
+      "id": "ops_board",
+      "state": "edited",
+      "pageNum": 10
+    },
+    {
+      "id": "job_sheet",
+      "state": "edited",
+      "pageNum": 11
+    },
+    {
+      "id": "portable_export",
+      "state": "edited",
+      "pageNum": 12
+    },
+    {
+      "id": "quick_reference",
+      "state": "edited",
+      "pageNum": 13
+    }
+  ],
+  "outline": [
+    {
+      "id": "welcome",
+      "title": "Your Complete Job Workflow — From Estimate to War Board",
+      "summary": "Introduction to the full GNB system, covering both the customer-facing Configurator and the internal Ops Board.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "big_picture",
+      "title": "One Estimate Flows Automatically Into Your Job Schedule",
+      "summary": "Overview of how the standalone Configurator sends data to Google Sheets, which populates the Ops Board via transfer codes.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "setup_backend",
+      "title": "Create Your Google Sheet and Deploy the Web App Once — Then Never Touch It Again",
+      "summary": "Step-by-step guide on setting up the Google Sheet and deploying the Apps Script Web App for the Ops Board.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "setup_connect",
+      "title": "Paste One URL Into the Admin Panel and You're Done Forever",
+      "summary": "Instructions on how to link the Configurator to the Google Sheet backend using the Admin Panel.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "configurator_customer",
+      "title": "Fill In the Customer's Basic Info to Start an Estimate",
+      "summary": "Using the Configurator to enter customer details, which works offline and syncs later.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "configurator_profile",
+      "title": "Select the Border Profile and Stamp Pattern — Prices Update Live",
+      "summary": "Selecting border profiles and stamp patterns in the Configurator, with real-time price updates.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "configurator_extras",
+      "title": "Add Cable, Color, Enter Footage, and Drop Any Notes",
+      "summary": "Adding extras like cable reinforcement and integral color, entering footage, and adding notes.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "configurator_summary",
+      "title": "Review the Complete Estimate — Then Send It Anywhere",
+      "summary": "Reviewing the final estimate and the available actions: Print, Send Estimate, and Send to Ops Board.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "transfer_code",
+      "title": "A Simple Word + Number Gets Your Job Onto Any Device",
+      "summary": "Explanation of the simple noun+number transfer code system for moving jobs between devices without logins.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "ops_board",
+      "title": "All Your Jobs on One Screen — Drag, Drop, Click, Done",
+      "summary": "Overview of the War Board interface, managing job statuses via drag-and-drop, and accessing job details.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "job_sheet",
+      "title": "Every Detail About the Job Lives in One Place",
+      "summary": "Details on the extended job sheet, including color palettes, run descriptions, prep work, and boss notes.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "portable_export",
+      "title": "Export a Portable Copy That Works Anywhere Without Setup",
+      "summary": "How to export a portable HTML version of the Configurator with all settings baked in.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "quick_reference",
+      "title": "Estimate → Transfer Code → War Board → Job Sheet → Email Backup",
+      "summary": "A quick reference summary of the entire 6-step workflow from estimate to scheduled job.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    }
+  ]
+}
