@@ -233,3 +233,47 @@
 - Auto-resize image uploader is required to eliminate manual prep.
 
 ---
+
+### Session 8 — May 15, 2026
+
+**Scope:** Pricing model overhaul — per-stamp base rates, reordered workflow steps, new adders.
+
+**Trigger:** User requested that stamps each carry their own base rate (not a flat base + stamp adder), that the configurator step order be changed to put Stamp first after Customer Info, and that color/integral color be independently toggleable.
+
+| ID | Type | Description | Files Affected |
+|----|------|-------------|----------------|
+| FIX-023 | Feature | Removed global `config.pricing.base` — stamp rate IS now the base rate | `index.html` |
+| FIX-024 | Feature | Each stamp object now has a `rate` field (replaces old `price` adder) | `index.html` |
+| FIX-025 | Feature | Step order changed: Customer Info → **Stamp** → Profile → Extras → Footage → Notes → Summary | `index.html` |
+| FIX-026 | Feature | Square profile now has an admin-settable price adder (default $0, blank = TBD) | `index.html` |
+| FIX-027 | Feature | Cable adder default changed from $0.75/ft to **$0.25/ft**, remains admin-changeable | `index.html` |
+| FIX-028 | Feature | Color adder split into two independent toggleable options: **Color** and **Integral Color** | `index.html` |
+| FIX-029 | Feature | Color and Integral Color each have their own admin-settable price field | `index.html` |
+| FIX-030 | Feature | Admin panel updated — Base Price field removed, per-stamp Rate field added to each stamp card | `index.html` |
+| FIX-031 | Feature | Admin panel updated — Square profile adder field, separate Color/Integral Color price fields | `index.html` |
+| FIX-032 | Feature | Stamp cards display full rate (e.g., `$25.00/ft`) not adder format | `index.html` |
+| FIX-033 | Feature | Price banner in header updates live as stamp is selected and adders are toggled | `index.html` |
+| FIX-034 | Feature | Summary step shows stamp rate and all active adders with individual amounts | `index.html` |
+
+**Pricing defaults set:**
+
+| Item | Default | Admin-changeable |
+|---|---|---|
+| Plain | $10.00/ft | Yes |
+| Great Northern | $25.00/ft | Yes |
+| Granite | blank (TBD) | Yes |
+| River Rock | blank (TBD) | Yes |
+| Slant profile | $0 (Included) | No |
+| Mow profile | $0 (Included) | No |
+| Square profile | $0 (Included, admin can set adder) | Yes |
+| Cable | +$0.25/ft | Yes |
+| Color | +$0.50/ft | Yes |
+| Integral Color | +$0.50/ft | Yes |
+
+**Test results:** Full end-to-end flow tested locally. Great Northern + Cable = $25.25/ft × 100 ft = $2,525.00. Math confirmed correct.
+
+**Deployed:** Committed and pushed to `main` — Vercel auto-deploy triggered. Commit hash: `b6fb963`.
+
+---
+
+*Log maintained by Manus. Last updated: 2026-05-15.*
