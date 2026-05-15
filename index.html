@@ -228,9 +228,18 @@
     <div class="admin-content" id="adminContent"></div>
   </div>
   <script>
-    // Default configuration.  Administrators can override these settings via
-    // the admin panel.  The structure is intentionally verbose to make
-    // available settings obvious.
+    // ─────────────────────────────────────────────────────────────────────────
+    // DEFAULT CONFIGURATION
+    // SESSION 8 CHANGES:
+    //   - Stamp is now the BASE RATE (not an adder on top of a global base).
+    //     config.pricing.base is removed. Each stamp has a `rate` field.
+    //   - Profile adder: Slant=0, Mow=0, Square has its own adder (admin sets).
+    //   - Cable adder: $0.25/ft default, toggleable.
+    //   - Two separate color adders: "Color" and "Integral Color", each
+    //     independently toggleable and price-settable by admin.
+    //   - Step order changed: Customer → Stamp → Profile → Extras → Footage
+    //     → Notes → Summary  (was: Customer → Profile → Stamp → …)
+    // ─────────────────────────────────────────────────────────────────────────
     const defaultConfig = {
       adminPin: '1234',
       business: {
@@ -251,28 +260,38 @@
         textColor: '#1A1A1A'
       },
       pricing: {
-        base: 10.0,
+        // Cable adder
         cableEnabled: true,
-        cableAdder: 0.75,
+        cableAdder: 0.25,
+        // Color adder (standard color — some stamps include color, so this can be toggled off)
         colorEnabled: true,
-        colorAdder: 0.5
+        colorAdder: 0.50,
+        // Integral color adder (separate option)
+        integralColorEnabled: true,
+        integralColorAdder: 0.50
       },
       products: {
+        // Profiles are shape/edge choices — they carry an optional price adder.
+        // Square profile costs more; admin sets the adder. Slant and Mow are $0.
         profiles: [
-          { id: 'great', name: 'Great Northern', desc: 'Our signature design.', series: 'Mountain', price: 0, imageUrl: '' },
-          { id: 'mountain', name: 'Badrock Canyon', desc: 'Beautiful stone textures.', series: 'Mountain', price: 2.5, imageUrl: '' },
-          { id: 'scapegoat', name: 'Scapegoat', desc: 'Rugged, rustic edging.', series: 'Wilderness', price: 3.5, imageUrl: '' }
+          { id: 'slant',  name: 'Slant',  desc: 'Standard slant edge.',   series: 'Standard', price: 0,   imageUrl: '' },
+          { id: 'mow',    name: 'Mow',    desc: 'Mow-over edge.',          series: 'Standard', price: 0,   imageUrl: '' },
+          { id: 'square', name: 'Square', desc: 'Square edge — premium.', series: 'Standard', price: 0,   imageUrl: '' }
         ],
+        // Stamps define the BASE RATE per linear foot.
+        // `rate` replaces the old `price` adder field.
+        // Plain and Great Northern have known rates; others are left at 0 for admin to set.
         stamps: [
-          { id: 'no', name: 'No Stamp', desc: 'Smooth finish with no texture.', series: 'Basic', price: 0, imageUrl: '' },
-          { id: 'granite', name: 'Granite', desc: 'Granite texture stamping.', series: 'Mountain', price: 1.5, imageUrl: '' },
-          { id: 'river', name: 'River Rock', desc: 'River rock texture.', series: 'Wilderness', price: 2, imageUrl: '' }
+          { id: 'plain',         name: 'Plain',         desc: 'Smooth finish, no texture.',  series: 'Basic',     rate: 10,  imageUrl: '' },
+          { id: 'great',         name: 'Great Northern', desc: 'Our signature design.',       series: 'Signature', rate: 25,  imageUrl: '' },
+          { id: 'granite',       name: 'Granite',        desc: 'Granite texture stamping.',   series: 'Texture',   rate: 0,   imageUrl: '' },
+          { id: 'river',         name: 'River Rock',     desc: 'River rock texture.',         series: 'Texture',   rate: 0,   imageUrl: '' }
         ]
       },
       labels: {
         stepCustomer: 'Customer Info',
-        stepProfile: 'Choose Profile',
         stepStamp: 'Choose Stamp',
+        stepProfile: 'Choose Profile',
         stepOptions: 'Extras',
         stepFootage: 'Footage',
         stepNotes: 'Notes',
@@ -290,12 +309,14 @@
         fieldFootage: 'Total linear feet',
         fieldNotes: 'Additional notes',
         labelCable: 'Cable reinforcement',
-        labelColor: 'Integral colour',
+        labelColor: 'Color',
+        labelIntegralColor: 'Integral Color',
         summaryCustomer: 'Customer',
-        summaryProfile: 'Profile',
         summaryStamp: 'Stamp',
+        summaryProfile: 'Profile',
         summaryCable: 'Cable reinforcement',
-        summaryColor: 'Integral colour',
+        summaryColor: 'Color',
+        summaryIntegralColor: 'Integral Color',
         summaryFootage: 'Footage',
         summaryPerFoot: 'Price per foot',
         summaryTotal: 'Total price',
@@ -304,6 +325,7 @@
       features: {
         enableCable: true,
         enableColor: true,
+        enableIntegralColor: true,
         enableNotes: true,
         enablePrint: true,
         enableEmail: true,
@@ -311,11 +333,7 @@
       }
     };
 
-    // Storage availability check.  Some mobile browsers (e.g. Safari when
-    // running local files or private mode) disable localStorage entirely and
-    // will throw a SecurityError when attempting to read/write.  To ensure
-    // the configurator still loads in those environments we detect
-    // availability once up front.
+    // Storage availability check.
     const storageAvailable = (() => {
       try {
         const x = '__storage_test__';
@@ -327,15 +345,25 @@
       }
     })();
 
-    // Load configuration from storage or fall back to default.  We deep‑clone
-    // defaultConfig to avoid accidental mutation.  An admin can always reset
-    // to factory defaults via the advanced section.
+    // Deep merge helper — fixes ISSUE-005 (shallow Object.assign drops nested keys).
+    function deepMerge(target, source) {
+      const out = Object.assign({}, target);
+      Object.keys(source).forEach(key => {
+        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+          out[key] = deepMerge(target[key] || {}, source[key]);
+        } else {
+          out[key] = source[key];
+        }
+      });
+      return out;
+    }
+
     function loadConfig() {
       if (storageAvailable) {
         try {
           const stored = localStorage.getItem('config');
           if (stored) {
-            return Object.assign({}, defaultConfig, JSON.parse(stored));
+            return deepMerge(defaultConfig, JSON.parse(stored));
           }
         } catch (e) {
           console.warn('Config parse error or storage unavailable; using defaults.', e);
@@ -346,23 +374,33 @@
 
     let config = loadConfig();
 
-    // Application state stores user selections and current step.  It is
-    // intentionally simple; complex logic like price calculation is kept in
-    // dedicated functions.
+    // ─────────────────────────────────────────────────────────────────────────
+    // STEP CONSTANTS  (Session 8: Stamp moved to step 1, Profile to step 2)
+    // ─────────────────────────────────────────────────────────────────────────
+    const STEP_CUSTOMER = 0;
+    const STEP_STAMP    = 1;
+    const STEP_PROFILE  = 2;
+    const STEP_OPTIONS  = 3;
+    const STEP_FOOTAGE  = 4;
+    const STEP_NOTES    = 5;
+    const STEP_SUMMARY  = 6;
+
+    // Application state
     let state = {
-      step: 0,
+      step: STEP_CUSTOMER,
       customer: { name: '', email: '', phone: '', address: '' },
-      profileId: null,
       stampId: null,
+      profileId: null,
       cable: false,
       color: false,
+      integralColor: false,
       footage: 0,
       notes: ''
     };
 
     // Utilities
     function formatCurrency(num) {
-      return `$${num.toFixed(2)}`;
+      return `$${Number(num).toFixed(2)}`;
     }
     function getProfileById(id) {
       return config.products.profiles.find(p => p.id === id);
@@ -371,23 +409,34 @@
       return config.products.stamps.find(s => s.id === id);
     }
 
-    // Calculate price per foot and total.
+    // ─────────────────────────────────────────────────────────────────────────
+    // PRICING  — Stamp rate IS the base. Adders stack on top.
+    // ─────────────────────────────────────────────────────────────────────────
     function calculatePricing() {
-      const base = Number(config.pricing.base) || 0;
-      let perFoot = base;
+      const stamp   = getStampById(state.stampId);
       const profile = getProfileById(state.profileId);
-      const stamp = getStampById(state.stampId);
+
+      // Stamp rate is the base; fall back to 0 if no stamp selected yet.
+      let perFoot = stamp ? (Number(stamp.rate) || 0) : 0;
+
+      // Profile adder (Square may have a non-zero price; Slant/Mow are 0).
       if (profile) perFoot += Number(profile.price) || 0;
-      if (stamp) perFoot += Number(stamp.price) || 0;
-      if (config.pricing.cableEnabled && state.cable) perFoot += Number(config.pricing.cableAdder) || 0;
-      if (config.pricing.colorEnabled && state.color) perFoot += Number(config.pricing.colorAdder) || 0;
+
+      // Extras adders
+      if (config.pricing.cableEnabled && state.cable)
+        perFoot += Number(config.pricing.cableAdder) || 0;
+      if (config.pricing.colorEnabled && state.color)
+        perFoot += Number(config.pricing.colorAdder) || 0;
+      if (config.pricing.integralColorEnabled && state.integralColor)
+        perFoot += Number(config.pricing.integralColorAdder) || 0;
+
       const total = perFoot * (Number(state.footage) || 0);
       return { perFoot, total };
     }
 
-    // Render functions for each step.  The root element is cleared and
-    // repopulated on every render call.  This simple approach avoids
-    // complicated stateful DOM manipulation.
+    // ─────────────────────────────────────────────────────────────────────────
+    // RENDER
+    // ─────────────────────────────────────────────────────────────────────────
     function renderHeader() {
       document.getElementById('companyName').textContent = config.business.companyName || 'Company';
       const logo = document.getElementById('logoImg');
@@ -397,15 +446,13 @@
       } else {
         logo.style.display = 'none';
       }
-      // update theme colours
-      document.documentElement.style.setProperty('--primary', config.branding.primaryColor);
-      document.documentElement.style.setProperty('--secondary', config.branding.secondaryColor);
+      document.documentElement.style.setProperty('--primary',    config.branding.primaryColor);
+      document.documentElement.style.setProperty('--secondary',  config.branding.secondaryColor);
       document.documentElement.style.setProperty('--background', config.branding.backgroundColor);
-      document.documentElement.style.setProperty('--text', config.branding.textColor);
-      // price banner (optional)
+      document.documentElement.style.setProperty('--text',       config.branding.textColor);
       const pb = document.getElementById('priceBanner');
       const pricing = calculatePricing();
-      pb.textContent = state.profileId ? `Price: ${formatCurrency(pricing.perFoot)}/ft` : '';
+      pb.textContent = state.stampId ? `Price: ${formatCurrency(pricing.perFoot)}/ft` : '';
     }
 
     function render() {
@@ -413,39 +460,25 @@
       const app = document.getElementById('app');
       app.innerHTML = '';
       switch (state.step) {
-        case 0:
-          renderCustomerStep(app);
-          break;
-        case 1:
-          renderProfileStep(app);
-          break;
-        case 2:
-          renderStampStep(app);
-          break;
-        case 3:
-          renderOptionsStep(app);
-          break;
-        case 4:
-          renderFootageStep(app);
-          break;
-        case 5:
-          renderNotesStep(app);
-          break;
-        case 6:
-          renderSummaryStep(app);
-          break;
+        case STEP_CUSTOMER: renderCustomerStep(app);  break;
+        case STEP_STAMP:    renderStampStep(app);     break;
+        case STEP_PROFILE:  renderProfileStep(app);   break;
+        case STEP_OPTIONS:  renderOptionsStep(app);   break;
+        case STEP_FOOTAGE:  renderFootageStep(app);   break;
+        case STEP_NOTES:    renderNotesStep(app);     break;
+        case STEP_SUMMARY:  renderSummaryStep(app);   break;
       }
     }
 
+    // ── Step 0: Customer Info ──────────────────────────────────────────────
     function renderCustomerStep(app) {
       const step = document.createElement('div');
       step.className = 'step';
       step.innerHTML = `<h2>${config.labels.stepCustomer}</h2>`;
-      // fields
       const fieldLabelMap = {
-        name: config.labels.fieldName || 'Name',
-        email: config.labels.fieldEmail || 'Email',
-        phone: config.labels.fieldPhone || 'Phone',
+        name:    config.labels.fieldName    || 'Name',
+        email:   config.labels.fieldEmail   || 'Email',
+        phone:   config.labels.fieldPhone   || 'Phone',
         address: config.labels.fieldAddress || 'Address'
       };
       ['name', 'email', 'phone', 'address'].forEach(key => {
@@ -456,14 +489,11 @@
         const inp = document.createElement('input');
         inp.type = 'text';
         inp.value = state.customer[key] || '';
-        inp.oninput = () => {
-          state.customer[key] = inp.value;
-        };
+        inp.oninput = () => { state.customer[key] = inp.value; };
         field.appendChild(lbl);
         field.appendChild(inp);
         step.appendChild(field);
       });
-      // navigation
       const nav = document.createElement('div');
       nav.className = 'btn-row';
       const nextBtn = document.createElement('button');
@@ -472,7 +502,7 @@
         if (!state.customer.name || !state.customer.email || !state.customer.phone || !state.customer.address) {
           alert('Please fill in all customer fields.');
         } else {
-          state.step = 1;
+          state.step = STEP_STAMP;
           render();
         }
       };
@@ -481,56 +511,12 @@
       app.appendChild(step);
     }
 
-    function renderProfileStep(app) {
-      const step = document.createElement('div');
-      step.className = 'step';
-      step.innerHTML = `<h2>${config.labels.stepProfile}</h2>`;
-      // group profiles by series
-      const seriesMap = {};
-      config.products.profiles.forEach(p => {
-        seriesMap[p.series] = seriesMap[p.series] || [];
-        seriesMap[p.series].push(p);
-      });
-      Object.keys(seriesMap).forEach(series => {
-        const title = document.createElement('h3');
-        title.textContent = series;
-        step.appendChild(title);
-        const list = document.createElement('div');
-        list.className = 'card-list';
-        seriesMap[series].forEach(item => {
-          const card = document.createElement('div');
-          card.className = 'card' + (state.profileId === item.id ? ' selected' : '');
-          card.innerHTML = `${item.imageUrl ? `<img src="${item.imageUrl}" style="width:100%;max-height:120px;object-fit:cover;border-radius:4px;margin-bottom:6px;">` : ''}<strong>${item.name}</strong><div>${item.desc}</div><div class="price">+${formatCurrency(item.price)}/ft</div>`;
-          card.onclick = () => {
-            state.profileId = item.id;
-            // reset dependent selections
-            render();
-          };
-          list.appendChild(card);
-        });
-        step.appendChild(list);
-      });
-      // nav
-      const nav = document.createElement('div');
-      nav.className = 'btn-row';
-      const back = document.createElement('button');
-      back.textContent = config.labels.btnBack;
-      back.onclick = () => { state.step = 0; render(); };
-      const next = document.createElement('button');
-      next.textContent = config.labels.btnNext;
-      next.disabled = !state.profileId;
-      next.onclick = () => { state.step = 2; render(); };
-      nav.appendChild(back);
-      nav.appendChild(next);
-      step.appendChild(nav);
-      app.appendChild(step);
-    }
-
+    // ── Step 1: Stamp (BASE RATE) ──────────────────────────────────────────
     function renderStampStep(app) {
       const step = document.createElement('div');
       step.className = 'step';
       step.innerHTML = `<h2>${config.labels.stepStamp}</h2>`;
-      // group stamps
+      // Group stamps by series
       const seriesMap = {};
       config.products.stamps.forEach(p => {
         seriesMap[p.series] = seriesMap[p.series] || [];
@@ -545,7 +531,9 @@
         seriesMap[series].forEach(item => {
           const card = document.createElement('div');
           card.className = 'card' + (state.stampId === item.id ? ' selected' : '');
-          card.innerHTML = `${item.imageUrl ? `<img src="${item.imageUrl}" style="width:100%;max-height:120px;object-fit:cover;border-radius:4px;margin-bottom:6px;">` : ''}<strong>${item.name}</strong><div>${item.desc}</div><div class="price">+${formatCurrency(item.price)}/ft</div>`;
+          // Display stamp rate as the full price (not an adder)
+          const rateDisplay = item.rate > 0 ? `${formatCurrency(item.rate)}/ft` : 'Price TBD';
+          card.innerHTML = `${item.imageUrl ? `<img src="${item.imageUrl}" style="width:100%;max-height:120px;object-fit:cover;border-radius:4px;margin-bottom:6px;">` : ''}<strong>${item.name}</strong><div>${item.desc}</div><div class="price">${rateDisplay}</div>`;
           card.onclick = () => {
             state.stampId = item.id;
             render();
@@ -558,63 +546,103 @@
       nav.className = 'btn-row';
       const back = document.createElement('button');
       back.textContent = config.labels.btnBack;
-      back.onclick = () => { state.step = 1; render(); };
+      back.onclick = () => { state.step = STEP_CUSTOMER; render(); };
       const next = document.createElement('button');
       next.textContent = config.labels.btnNext;
       next.disabled = !state.stampId;
-      next.onclick = () => { state.step = 3; render(); };
+      next.onclick = () => { state.step = STEP_PROFILE; render(); };
       nav.appendChild(back);
       nav.appendChild(next);
       step.appendChild(nav);
       app.appendChild(step);
     }
 
-    function renderOptionsStep(app) {
+    // ── Step 2: Profile (ADDER) ────────────────────────────────────────────
+    function renderProfileStep(app) {
       const step = document.createElement('div');
       step.className = 'step';
-      step.innerHTML = `<h2>${config.labels.stepOptions}</h2>`;
-      // cable
-      if (config.features.enableCable && config.pricing.cableEnabled) {
-        const field = document.createElement('div');
-        field.className = 'field';
-        const lbl = document.createElement('label');
-        lbl.textContent = `${config.labels.labelCable || 'Cable reinforcement'} (+${formatCurrency(config.pricing.cableAdder)}/ft)`;
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.checked = !!state.cable;
-        cb.onchange = () => { state.cable = cb.checked; renderHeader(); };
-        field.appendChild(cb);
-        field.appendChild(lbl);
-        step.appendChild(field);
-      }
-      // color
-      if (config.features.enableColor && config.pricing.colorEnabled) {
-        const field = document.createElement('div');
-        field.className = 'field';
-        const lbl = document.createElement('label');
-        lbl.textContent = `${config.labels.labelColor || 'Integral colour'} (+${formatCurrency(config.pricing.colorAdder)}/ft)`;
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.checked = !!state.color;
-        cb.onchange = () => { state.color = cb.checked; renderHeader(); };
-        field.appendChild(cb);
-        field.appendChild(lbl);
-        step.appendChild(field);
-      }
+      step.innerHTML = `<h2>${config.labels.stepProfile}</h2>`;
+      const seriesMap = {};
+      config.products.profiles.forEach(p => {
+        seriesMap[p.series] = seriesMap[p.series] || [];
+        seriesMap[p.series].push(p);
+      });
+      Object.keys(seriesMap).forEach(series => {
+        const title = document.createElement('h3');
+        title.textContent = series;
+        step.appendChild(title);
+        const list = document.createElement('div');
+        list.className = 'card-list';
+        seriesMap[series].forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'card' + (state.profileId === item.id ? ' selected' : '');
+          // Show adder if non-zero, otherwise show "Included"
+          const adderDisplay = item.price > 0 ? `+${formatCurrency(item.price)}/ft` : 'Included';
+          card.innerHTML = `${item.imageUrl ? `<img src="${item.imageUrl}" style="width:100%;max-height:120px;object-fit:cover;border-radius:4px;margin-bottom:6px;">` : ''}<strong>${item.name}</strong><div>${item.desc}</div><div class="price">${adderDisplay}</div>`;
+          card.onclick = () => {
+            state.profileId = item.id;
+            render();
+          };
+          list.appendChild(card);
+        });
+        step.appendChild(list);
+      });
       const nav = document.createElement('div');
       nav.className = 'btn-row';
       const back = document.createElement('button');
       back.textContent = config.labels.btnBack;
-      back.onclick = () => { state.step = 2; render(); };
+      back.onclick = () => { state.step = STEP_STAMP; render(); };
       const next = document.createElement('button');
       next.textContent = config.labels.btnNext;
-      next.onclick = () => { state.step = 4; render(); };
+      next.disabled = !state.profileId;
+      next.onclick = () => { state.step = STEP_OPTIONS; render(); };
       nav.appendChild(back);
       nav.appendChild(next);
       step.appendChild(nav);
       app.appendChild(step);
     }
 
+    // ── Step 3: Extras (Adders) ────────────────────────────────────────────
+    function renderOptionsStep(app) {
+      const step = document.createElement('div');
+      step.className = 'step';
+      step.innerHTML = `<h2>${config.labels.stepOptions}</h2>`;
+
+      function addCheckbox(enabledFlag, adderKey, labelKey, stateKey) {
+        if (!config.features[enabledFlag] || !config.pricing[adderKey.replace('Adder','Enabled')]) return;
+        const field = document.createElement('div');
+        field.className = 'field';
+        const lbl = document.createElement('label');
+        const adderVal = Number(config.pricing[adderKey]) || 0;
+        lbl.textContent = `${config.labels[labelKey] || labelKey} (+${formatCurrency(adderVal)}/ft)`;
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = !!state[stateKey];
+        cb.onchange = () => { state[stateKey] = cb.checked; renderHeader(); };
+        field.appendChild(cb);
+        field.appendChild(lbl);
+        step.appendChild(field);
+      }
+
+      addCheckbox('enableCable',         'cableAdder',         'labelCable',         'cable');
+      addCheckbox('enableColor',         'colorAdder',         'labelColor',         'color');
+      addCheckbox('enableIntegralColor', 'integralColorAdder', 'labelIntegralColor', 'integralColor');
+
+      const nav = document.createElement('div');
+      nav.className = 'btn-row';
+      const back = document.createElement('button');
+      back.textContent = config.labels.btnBack;
+      back.onclick = () => { state.step = STEP_PROFILE; render(); };
+      const next = document.createElement('button');
+      next.textContent = config.labels.btnNext;
+      next.onclick = () => { state.step = STEP_FOOTAGE; render(); };
+      nav.appendChild(back);
+      nav.appendChild(next);
+      step.appendChild(nav);
+      app.appendChild(step);
+    }
+
+    // ── Step 4: Footage ────────────────────────────────────────────────────
     function renderFootageStep(app) {
       const step = document.createElement('div');
       step.className = 'step';
@@ -629,7 +657,6 @@
       inp.value = state.footage || '';
       inp.oninput = () => {
         state.footage = inp.value;
-        // update header and re‑render this step to enable/disable the next button
         renderHeader();
         render();
       };
@@ -640,17 +667,18 @@
       nav.className = 'btn-row';
       const back = document.createElement('button');
       back.textContent = config.labels.btnBack;
-      back.onclick = () => { state.step = 3; render(); };
+      back.onclick = () => { state.step = STEP_OPTIONS; render(); };
       const next = document.createElement('button');
       next.textContent = config.labels.btnNext;
       next.disabled = !state.footage;
-      next.onclick = () => { state.step = config.features.enableNotes ? 5 : 6; render(); };
+      next.onclick = () => { state.step = config.features.enableNotes ? STEP_NOTES : STEP_SUMMARY; render(); };
       nav.appendChild(back);
       nav.appendChild(next);
       step.appendChild(nav);
       app.appendChild(step);
     }
 
+    // ── Step 5: Notes ──────────────────────────────────────────────────────
     function renderNotesStep(app) {
       const step = document.createElement('div');
       step.className = 'step';
@@ -670,16 +698,17 @@
       nav.className = 'btn-row';
       const back = document.createElement('button');
       back.textContent = config.labels.btnBack;
-      back.onclick = () => { state.step = 4; render(); };
+      back.onclick = () => { state.step = STEP_FOOTAGE; render(); };
       const next = document.createElement('button');
       next.textContent = config.labels.btnNext;
-      next.onclick = () => { state.step = 6; render(); };
+      next.onclick = () => { state.step = STEP_SUMMARY; render(); };
       nav.appendChild(back);
       nav.appendChild(next);
       step.appendChild(nav);
       app.appendChild(step);
     }
 
+    // ── Step 6: Summary ────────────────────────────────────────────────────
     function renderSummaryStep(app) {
       const step = document.createElement('div');
       step.className = 'step';
@@ -695,60 +724,62 @@
         list.appendChild(li);
       }
       addItem(config.labels.summaryCustomer || 'Customer', `${state.customer.name} — ${state.customer.address}`);
-      const prof = getProfileById(state.profileId);
-      if (prof) addItem(config.labels.summaryProfile || 'Profile', prof.name + (prof.price ? ` (+${formatCurrency(prof.price)}/ft)` : ''));
       const stp = getStampById(state.stampId);
-      if (stp) addItem(config.labels.summaryStamp || 'Stamp', stp.name + (stp.price ? ` (+${formatCurrency(stp.price)}/ft)` : ''));
-      if (config.pricing.cableEnabled) addItem(config.labels.summaryCable || 'Cable reinforcement', state.cable ? `Yes (+${formatCurrency(config.pricing.cableAdder)}/ft)` : 'No');
-      if (config.pricing.colorEnabled) addItem(config.labels.summaryColor || 'Integral colour', state.color ? `Yes (+${formatCurrency(config.pricing.colorAdder)}/ft)` : 'No');
-      addItem(config.labels.summaryFootage || 'Footage', `${state.footage} ft`);
-      addItem(config.labels.summaryPerFoot || 'Price per foot', formatCurrency(pricing.perFoot));
-      addItem(config.labels.summaryTotal || 'Total price', formatCurrency(pricing.total));
+      if (stp) {
+        const rateStr = stp.rate > 0 ? ` — ${formatCurrency(stp.rate)}/ft` : '';
+        addItem(config.labels.summaryStamp || 'Stamp', stp.name + rateStr);
+      }
+      const prof = getProfileById(state.profileId);
+      if (prof) addItem(config.labels.summaryProfile || 'Profile', prof.name + (prof.price > 0 ? ` (+${formatCurrency(prof.price)}/ft)` : ''));
+      if (config.pricing.cableEnabled)         addItem(config.labels.summaryCable         || 'Cable reinforcement', state.cable         ? `Yes (+${formatCurrency(config.pricing.cableAdder)}/ft)`         : 'No');
+      if (config.pricing.colorEnabled)         addItem(config.labels.summaryColor         || 'Color',               state.color         ? `Yes (+${formatCurrency(config.pricing.colorAdder)}/ft)`         : 'No');
+      if (config.pricing.integralColorEnabled) addItem(config.labels.summaryIntegralColor || 'Integral Color',      state.integralColor ? `Yes (+${formatCurrency(config.pricing.integralColorAdder)}/ft)` : 'No');
+      addItem(config.labels.summaryFootage  || 'Footage',        `${state.footage} ft`);
+      addItem(config.labels.summaryPerFoot  || 'Price per foot', formatCurrency(pricing.perFoot));
+      addItem(config.labels.summaryTotal    || 'Total price',    formatCurrency(pricing.total));
       if (state.notes) addItem(config.labels.summaryNotes || 'Notes', state.notes);
       step.appendChild(list);
       const nav = document.createElement('div');
       nav.className = 'btn-row';
       const back = document.createElement('button');
       back.textContent = config.labels.btnBack;
-      back.onclick = () => { state.step = config.features.enableNotes ? 5 : 4; render(); };
+      back.onclick = () => { state.step = config.features.enableNotes ? STEP_NOTES : STEP_FOOTAGE; render(); };
       nav.appendChild(back);
       if (config.features.enablePrint) {
         const printBtn = document.createElement('button');
         printBtn.textContent = config.labels.btnPrint;
-        printBtn.onclick = () => {
-          window.print();
-        };
+        printBtn.onclick = () => { window.print(); };
         nav.appendChild(printBtn);
       }
       if (config.features.enableEmail) {
-          const sendBtn = document.createElement('button');
-          sendBtn.textContent = config.labels.btnSubmit;
-          sendBtn.onclick = () => {
-            const lines = [];
-            lines.push('Estimate for ' + state.customer.name);
-            lines.push('Address: ' + state.customer.address);
-            if (prof) lines.push('Profile: ' + prof.name);
-            if (stp) lines.push('Stamp: ' + stp.name);
-            if (config.pricing.cableEnabled) lines.push('Cable reinforcement: ' + (state.cable ? 'Yes' : 'No'));
-            if (config.pricing.colorEnabled) lines.push('Integral colour: ' + (state.color ? 'Yes' : 'No'));
-            lines.push('Footage: ' + state.footage + ' ft');
-            lines.push('Price per foot: ' + formatCurrency(pricing.perFoot));
-            lines.push('Total price: ' + formatCurrency(pricing.total));
-            if (state.notes) lines.push('Notes: ' + state.notes);
-            const subj = 'New Estimate — ' + state.customer.address;
-            const body = encodeURIComponent(lines.join('\n'));
-            const to = encodeURIComponent(config.business.submissionEmail || config.business.email);
-            window.location.href = `mailto:${to}?subject=${encodeURIComponent(subj)}&body=${body}`;
-          };
-          nav.appendChild(sendBtn);
+        const sendBtn = document.createElement('button');
+        sendBtn.textContent = config.labels.btnSubmit;
+        sendBtn.onclick = () => {
+          const lines = [];
+          lines.push('Estimate for ' + state.customer.name);
+          lines.push('Address: ' + state.customer.address);
+          if (stp)  lines.push('Stamp: '   + stp.name  + (stp.rate  > 0 ? ` (${formatCurrency(stp.rate)}/ft)`   : ''));
+          if (prof) lines.push('Profile: ' + prof.name + (prof.price > 0 ? ` (+${formatCurrency(prof.price)}/ft)` : ''));
+          if (config.pricing.cableEnabled)         lines.push('Cable reinforcement: '  + (state.cable         ? 'Yes' : 'No'));
+          if (config.pricing.colorEnabled)         lines.push('Color: '                + (state.color         ? 'Yes' : 'No'));
+          if (config.pricing.integralColorEnabled) lines.push('Integral Color: '       + (state.integralColor ? 'Yes' : 'No'));
+          lines.push('Footage: ' + state.footage + ' ft');
+          lines.push('Price per foot: ' + formatCurrency(pricing.perFoot));
+          lines.push('Total price: '    + formatCurrency(pricing.total));
+          if (state.notes) lines.push('Notes: ' + state.notes);
+          const subj = 'New Estimate — ' + state.customer.address;
+          const body = encodeURIComponent(lines.join('\n'));
+          const to   = encodeURIComponent(config.business.submissionEmail || config.business.email);
+          window.location.href = `mailto:${to}?subject=${encodeURIComponent(subj)}&body=${body}`;
+        };
+        nav.appendChild(sendBtn);
       }
-      // ── SUBMIT TO GNB OPS (sends job to Google Sheets via webhook) ──
+      // ── SUBMIT TO GNB OPS ──
       const opsBtn = document.createElement('button');
       opsBtn.textContent = config.labels.btnOps || '📋 Send to Ops Board';
       opsBtn.style.background = '#1B6CA8';
       opsBtn.onclick = () => { submitToOps(pricing, prof, stp); };
       nav.appendChild(opsBtn);
-
       step.appendChild(nav);
       app.appendChild(step);
     }
@@ -769,58 +800,63 @@
 
     function generateTransferCode() {
       const noun = TRANSFER_NOUNS[Math.floor(Math.random() * TRANSFER_NOUNS.length)];
-      const num = Math.floor(Math.random() * 90) + 10;
+      const num  = Math.floor(Math.random() * 90) + 10;
       return noun + num;
     }
 
     function submitToOps(pricing, prof, stp) {
-      if (!GNB_WEBHOOK_URL) {
+      const webhookUrl = config.business.webhookUrl || '';
+      if (!webhookUrl) {
         alert('Ops webhook not configured. Go to Admin → Business Info and paste your GNB Ops Web App URL into the Webhook URL field.');
         return;
       }
       const code = generateTransferCode();
+      const colorTags = [];
+      if (state.color)         colorTags.push('Color');
+      if (state.integralColor) colorTags.push('Integral Color');
       const jobData = {
-        name: state.customer.name || '',
-        phone: state.customer.phone || '',
-        email: state.customer.email || '',
-        address: state.customer.address || '',
-        type: 'hw',
-        stamp: stp ? stp.name : '',
-        footage: state.footage || '',
-        estimate: formatCurrency(pricing.total),
-        status: 'scheduled',
-        colorPalette: state.color ? ['Integral Color'] : [],
-        runs: [],
-        prepWork: '',
-        prepAmount: '',
-        bossNotes: '',
-        preNotes: state.notes || '',
+        name:         state.customer.name    || '',
+        phone:        state.customer.phone   || '',
+        email:        state.customer.email   || '',
+        address:      state.customer.address || '',
+        type:         'hw',
+        stamp:        stp  ? stp.name  : '',
+        profile:      prof ? prof.name : '',
+        footage:      state.footage || '',
+        estimate:     formatCurrency(pricing.total),
+        status:       'scheduled',
+        colorPalette: colorTags,
+        runs:         [],
+        prepWork:     '',
+        prepAmount:   '',
+        bossNotes:    '',
+        preNotes:     state.notes || '',
         transferCode: code
       };
 
-      opsBtn.disabled = true;
-      opsBtn.textContent = 'Sending...';
+      const opsBtn = document.querySelector('button[data-ops]');
+      if (opsBtn) { opsBtn.disabled = true; opsBtn.textContent = 'Sending...'; }
 
-      fetch(GNB_WEBHOOK_URL, {
-        method: 'POST',
+      fetch(webhookUrl, {
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'submit-job', job: jobData }),
-        mode: 'no-cors'
+        body:    JSON.stringify({ action: 'submit-job', job: jobData }),
+        mode:    'no-cors'
       }).then(() => {
-        opsBtn.textContent = '✓ Sent! Code: ' + code;
-        opsBtn.style.background = '#2E7D4F';
+        if (opsBtn) { opsBtn.textContent = '✓ Sent! Code: ' + code; opsBtn.style.background = '#2E7D4F'; }
         alert('Job sent to Ops Board!\n\nTransfer Code: ' + code + '\n\nUse this code on any device to pull the job into the War Board.');
       }).catch(err => {
-        opsBtn.disabled = false;
-        opsBtn.textContent = config.labels.btnOps || '📋 Send to Ops Board';
+        if (opsBtn) { opsBtn.disabled = false; opsBtn.textContent = config.labels.btnOps || '📋 Send to Ops Board'; }
         alert('Failed to send: ' + err.message + '\n\nMake sure the Webhook URL is correct in Admin settings.');
       });
     }
 
-    // Admin panel logic.  When admin button is clicked the user is
-    // prompted for a PIN.  Upon successful entry the panel appears.
+    // ════════════════════════════════════════════
+    // ADMIN PANEL
+    // ════════════════════════════════════════════
     let adminUnlocked = false;
     let pinEntry = '';
+
     function openAdmin() {
       const modal = document.getElementById('adminModal');
       modal.style.display = 'flex';
@@ -828,79 +864,53 @@
     }
     function closeAdmin() {
       document.getElementById('adminModal').style.display = 'none';
-      pinEntry = '';
+      document.getElementById('adminContent').innerHTML = '';
     }
+
     function renderAdmin() {
       const content = document.getElementById('adminContent');
       content.innerHTML = '';
-      // if not unlocked, show pin screen
       if (!adminUnlocked) {
-        const wrap = document.createElement('div');
-        wrap.style.textAlign = 'center';
-        wrap.innerHTML = '<h2>Admin Access</h2><p>Enter PIN</p>';
-        const dots = document.createElement('div');
-        for (let i = 0; i < 4; i++) {
-          const d = document.createElement('span');
-          d.id = 'pinDot' + i;
-          d.style.display = 'inline-block';
-          d.style.width = '8px';
-          d.style.height = '8px';
-          d.style.borderRadius = '50%';
-          d.style.margin = '0 4px';
-          d.style.border = '1px solid var(--primary)';
-          wrap.appendChild(d);
-        }
-        const keypad = document.createElement('div');
-        keypad.style.display = 'grid';
-        keypad.style.gridTemplateColumns = 'repeat(3, 1fr)';
-        keypad.style.gap = '0.5rem';
-        keypad.style.marginTop = '1rem';
-        const keys = ['1','2','3','4','5','6','7','8','9','⌫','0','✔'];
-        keys.forEach(k => {
-          const btn = document.createElement('button');
-          btn.textContent = k;
-          btn.onclick = () => handlePinKey(k);
-          keypad.appendChild(btn);
-        });
-        wrap.appendChild(keypad);
-        const err = document.createElement('div');
-        err.id = 'pinErr';
-        err.style.color = '#e74c3c';
-        err.style.marginTop = '0.5rem';
-        wrap.appendChild(err);
-        const closeBtn = document.createElement('button');
-        closeBtn.textContent = 'Close';
-        closeBtn.style.marginTop = '1rem';
-        closeBtn.onclick = closeAdmin;
-        wrap.appendChild(closeBtn);
-        content.appendChild(wrap);
+        renderPinPad(content);
       } else {
         renderAdminPanel();
       }
     }
-    function handlePinKey(k) {
-      const err = document.getElementById('pinErr');
-      if (err) err.textContent = '';
-      if (k === '⌫') {
+
+    function renderPinPad(content) {
+      content.innerHTML = `
+        <h2 style="margin-top:0;">Admin Access</h2>
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:1rem;">
+          ${[0,1,2,3].map(i => `<div id="pinDot${i}" style="width:18px;height:18px;border-radius:50%;border:2px solid #333;background:transparent;"></div>`).join('')}
+        </div>
+        <div id="pinErr" style="color:red;text-align:center;min-height:1.2em;margin-bottom:.5rem;"></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;max-width:200px;margin:0 auto;">
+          ${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k =>
+            k === ''
+              ? `<div></div>`
+              : `<button onclick="handlePin('${k}')" style="font-size:1.3rem;padding:.6rem;">${k}</button>`
+          ).join('')}
+        </div>
+        <div style="text-align:center;margin-top:1rem;">
+          <button onclick="closeAdmin()" style="background:#888;">Cancel</button>
+        </div>`;
+    }
+
+    function handlePin(key) {
+      if (key === '⌫') {
         pinEntry = pinEntry.slice(0, -1);
-      } else if (k === '✔') {
-        // ignore check button for now
-        return;
       } else {
-        if (pinEntry.length < 4) pinEntry += k;
+        pinEntry += key;
       }
-      // update dots
       for (let i = 0; i < 4; i++) {
         const d = document.getElementById('pinDot' + i);
-        if (d) {
-          d.style.background = i < pinEntry.length ? 'var(--primary)' : 'transparent';
-        }
+        if (d) d.style.background = i < pinEntry.length ? '#333' : 'transparent';
       }
       if (pinEntry.length === 4) {
-        if (pinEntry === config.adminPin) {
+        if (pinEntry === String(config.adminPin)) {
           adminUnlocked = true;
           pinEntry = '';
-          renderAdmin();
+          renderAdminPanel();
         } else {
           const errMsg = document.getElementById('pinErr');
           if (errMsg) errMsg.textContent = 'Incorrect PIN';
@@ -919,11 +929,12 @@
       const heading = document.createElement('h2');
       heading.textContent = 'Admin Panel';
       content.appendChild(heading);
-      // Standard settings
+
       const std = document.createElement('div');
       std.className = 'admin-section';
       std.innerHTML = '<h3>Standard Settings</h3>';
-      // business info
+
+      // Business info fields
       ['companyName','phone','email','submissionEmail','webhookUrl','website','logoUrl'].forEach(key => {
         const row = document.createElement('div');
         row.className = 'field';
@@ -937,7 +948,8 @@
         row.appendChild(inp);
         std.appendChild(row);
       });
-      // theme colours
+
+      // Theme colours
       ['primaryColor','secondaryColor','backgroundColor','textColor'].forEach(key => {
         const row = document.createElement('div');
         row.className = 'field';
@@ -951,36 +963,69 @@
         row.appendChild(inp);
         std.appendChild(row);
       });
-      // pricing simple
-      ['base','cableAdder','colorAdder'].forEach(key => {
-        const row = document.createElement('div');
-        row.className = 'field';
-        const lbl = document.createElement('label');
-        lbl.textContent = key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
-        const inp = document.createElement('input');
-        inp.type = 'number';
-        inp.step = '0.01';
-        inp.min = '0';
-        inp.value = config.pricing[key];
-        inp.oninput = () => { config.pricing[key] = parseFloat(inp.value) || 0; renderHeader(); };
-        row.appendChild(lbl);
-        row.appendChild(inp);
-        std.appendChild(row);
-      });
-      // toggles
-      [['cableEnabled','Cable Enabled'], ['colorEnabled','Colour Enabled']].forEach(([prop,label]) => {
-        const row = document.createElement('div');
-        row.className = 'field';
+
+      // ── PRICING ADDERS ──────────────────────────────────────────────────
+      const pricingSec = document.createElement('div');
+      pricingSec.className = 'admin-section';
+      pricingSec.innerHTML = '<h3>Pricing — Adders</h3><p style="font-size:.85rem;color:#666;margin-bottom:.5rem;">Stamp rates are set per-stamp below. These are the extras that stack on top.</p>';
+
+      function adderRow(label, enabledKey, adderKey) {
+        const wrap = document.createElement('div');
+        wrap.className = 'field';
+        wrap.style.border = '1px solid #eee';
+        wrap.style.borderRadius = '4px';
+        wrap.style.padding = '0.5rem';
+        wrap.style.marginBottom = '0.5rem';
+
+        const topRow = document.createElement('div');
+        topRow.style.display = 'flex';
+        topRow.style.alignItems = 'center';
+        topRow.style.gap = '0.5rem';
+        topRow.style.marginBottom = '0.4rem';
+
         const cb = document.createElement('input');
         cb.type = 'checkbox';
-        cb.checked = config.pricing[prop];
-        cb.onchange = () => { config.pricing[prop] = cb.checked; renderHeader(); };
-        const lblEl = document.createElement('label');
-        lblEl.textContent = label;
-        row.appendChild(cb);
-        row.appendChild(lblEl);
-        std.appendChild(row);
-      });
+        cb.checked = !!config.pricing[enabledKey];
+        cb.onchange = () => { config.pricing[enabledKey] = cb.checked; renderHeader(); };
+
+        const lbl = document.createElement('label');
+        lbl.textContent = label + ' — Enabled';
+        lbl.style.fontWeight = 'bold';
+        lbl.style.margin = '0';
+
+        topRow.appendChild(cb);
+        topRow.appendChild(lbl);
+        wrap.appendChild(topRow);
+
+        const priceRow = document.createElement('div');
+        priceRow.style.display = 'flex';
+        priceRow.style.alignItems = 'center';
+        priceRow.style.gap = '0.5rem';
+
+        const priceLbl = document.createElement('label');
+        priceLbl.textContent = 'Adder ($/ft):';
+        priceLbl.style.margin = '0';
+        priceLbl.style.minWidth = '90px';
+
+        const priceInp = document.createElement('input');
+        priceInp.type = 'number';
+        priceInp.step = '0.01';
+        priceInp.min = '0';
+        priceInp.value = config.pricing[adderKey] || 0;
+        priceInp.style.width = '100px';
+        priceInp.oninput = () => { config.pricing[adderKey] = parseFloat(priceInp.value) || 0; renderHeader(); };
+
+        priceRow.appendChild(priceLbl);
+        priceRow.appendChild(priceInp);
+        wrap.appendChild(priceRow);
+        return wrap;
+      }
+
+      pricingSec.appendChild(adderRow('Cable',          'cableEnabled',         'cableAdder'));
+      pricingSec.appendChild(adderRow('Color',          'colorEnabled',         'colorAdder'));
+      pricingSec.appendChild(adderRow('Integral Color', 'integralColorEnabled', 'integralColorAdder'));
+      std.appendChild(pricingSec);
+
       // Helper: image field with URL input + file upload
       function makeImageField(label, getValue, setValue) {
         const wrap = document.createElement('div');
@@ -1048,11 +1093,12 @@
         return wrap;
       }
 
-      // product lists (profiles and stamps)
-      function renderList(sectionTitle, arr, type) {
+      // ── PRODUCT LISTS ────────────────────────────────────────────────────
+      // Stamps use `rate` (base rate). Profiles use `price` (adder).
+      function renderStampList(sectionTitle, arr) {
         const sec = document.createElement('div');
         sec.className = 'admin-section';
-        sec.innerHTML = `<h3>${sectionTitle}</h3>`;
+        sec.innerHTML = `<h3>${sectionTitle}</h3><p style="font-size:.85rem;color:#666;margin-bottom:.5rem;">Each stamp's rate is the full base price per linear foot.</p>`;
         arr.forEach((item, index) => {
           const li = document.createElement('div');
           li.className = 'list-item';
@@ -1062,96 +1108,151 @@
           title.textContent = item.name || '(Unnamed)';
           const del = document.createElement('button');
           del.textContent = 'Delete';
-          del.onclick = () => {
-            if (confirm('Delete this item?')) {
-              arr.splice(index, 1);
-              renderAdminPanel();
-            }
-          };
+          del.onclick = () => { if (confirm('Delete this stamp?')) { arr.splice(index, 1); renderAdminPanel(); } };
           header.appendChild(title);
           header.appendChild(del);
           li.appendChild(header);
-          // fields for item
-          ['name','desc','series','price'].forEach(key => {
+          // Name, desc, series
+          ['name','desc','series'].forEach(key => {
             const f = document.createElement('div');
             f.className = 'field';
             const lbl = document.createElement('label');
-            lbl.textContent = key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
+            lbl.textContent = key.charAt(0).toUpperCase() + key.slice(1);
             const inp = document.createElement('input');
-            if (key === 'price') {
-              inp.type = 'number';
-              inp.step = '0.01';
-              inp.min = '0';
-            } else {
-              inp.type = 'text';
-            }
+            inp.type = 'text';
             inp.value = item[key] || '';
-            inp.oninput = () => {
-              item[key] = key === 'price' ? parseFloat(inp.value) || 0 : inp.value;
-              renderHeader();
-            };
+            inp.oninput = () => { item[key] = inp.value; renderHeader(); };
             f.appendChild(lbl);
             f.appendChild(inp);
             li.appendChild(f);
           });
-          // Image field with URL + upload
+          // Rate field (base rate, not adder)
+          const rateField = document.createElement('div');
+          rateField.className = 'field';
+          const rateLbl = document.createElement('label');
+          rateLbl.textContent = 'Base Rate ($/ft)';
+          const rateInp = document.createElement('input');
+          rateInp.type = 'number';
+          rateInp.step = '0.01';
+          rateInp.min = '0';
+          rateInp.value = item.rate || 0;
+          rateInp.oninput = () => { item.rate = parseFloat(rateInp.value) || 0; renderHeader(); };
+          rateField.appendChild(rateLbl);
+          rateField.appendChild(rateInp);
+          li.appendChild(rateField);
           li.appendChild(makeImageField('Image (URL or Upload)', () => item.imageUrl || '', (v) => { item.imageUrl = v; }));
           sec.appendChild(li);
         });
-        // Add new
         const addBtn = document.createElement('button');
-        addBtn.textContent = 'Add New';
+        addBtn.textContent = 'Add New Stamp';
         addBtn.onclick = () => {
-          arr.push({ id: type + '-' + Date.now(), name: '', desc: '', series: '', price: 0 });
+          arr.push({ id: 'stamp-' + Date.now(), name: '', desc: '', series: '', rate: 0, imageUrl: '' });
           renderAdminPanel();
         };
         sec.appendChild(addBtn);
         return sec;
       }
-      std.appendChild(renderList('Profiles', config.products.profiles, 'profile'));
-      std.appendChild(renderList('Stamps', config.products.stamps, 'stamp'));
+
+      function renderProfileList(sectionTitle, arr) {
+        const sec = document.createElement('div');
+        sec.className = 'admin-section';
+        sec.innerHTML = `<h3>${sectionTitle}</h3><p style="font-size:.85rem;color:#666;margin-bottom:.5rem;">Profile adder stacks on top of the stamp rate. Set to 0 for no extra charge.</p>`;
+        arr.forEach((item, index) => {
+          const li = document.createElement('div');
+          li.className = 'list-item';
+          const header = document.createElement('div');
+          header.className = 'list-item-header';
+          const title = document.createElement('h4');
+          title.textContent = item.name || '(Unnamed)';
+          const del = document.createElement('button');
+          del.textContent = 'Delete';
+          del.onclick = () => { if (confirm('Delete this profile?')) { arr.splice(index, 1); renderAdminPanel(); } };
+          header.appendChild(title);
+          header.appendChild(del);
+          li.appendChild(header);
+          ['name','desc','series'].forEach(key => {
+            const f = document.createElement('div');
+            f.className = 'field';
+            const lbl = document.createElement('label');
+            lbl.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.value = item[key] || '';
+            inp.oninput = () => { item[key] = inp.value; renderHeader(); };
+            f.appendChild(lbl);
+            f.appendChild(inp);
+            li.appendChild(f);
+          });
+          // Price adder field
+          const priceField = document.createElement('div');
+          priceField.className = 'field';
+          const priceLbl = document.createElement('label');
+          priceLbl.textContent = 'Price Adder ($/ft) — 0 = Included';
+          const priceInp = document.createElement('input');
+          priceInp.type = 'number';
+          priceInp.step = '0.01';
+          priceInp.min = '0';
+          priceInp.value = item.price || 0;
+          priceInp.oninput = () => { item.price = parseFloat(priceInp.value) || 0; renderHeader(); };
+          priceField.appendChild(priceLbl);
+          priceField.appendChild(priceInp);
+          li.appendChild(priceField);
+          li.appendChild(makeImageField('Image (URL or Upload)', () => item.imageUrl || '', (v) => { item.imageUrl = v; }));
+          sec.appendChild(li);
+        });
+        const addBtn = document.createElement('button');
+        addBtn.textContent = 'Add New Profile';
+        addBtn.onclick = () => {
+          arr.push({ id: 'profile-' + Date.now(), name: '', desc: '', series: '', price: 0, imageUrl: '' });
+          renderAdminPanel();
+        };
+        sec.appendChild(addBtn);
+        return sec;
+      }
+
+      std.appendChild(renderStampList('Stamps (Base Rates)', config.products.stamps));
+      std.appendChild(renderProfileList('Profiles (Adders)', config.products.profiles));
       content.appendChild(std);
 
-      // ── CONTENT & LABELS SECTION ──
+      // ── CONTENT & LABELS ─────────────────────────────────────────────────
       const contentSec = document.createElement('div');
       contentSec.className = 'admin-section';
       contentSec.innerHTML = '<h3>Content &amp; Labels</h3><p style="font-size:.85rem;color:#666;margin-bottom:1rem;">Edit every text label and image shown to customers.</p>';
-
-      // Logo image
       contentSec.appendChild(makeImageField('Logo Image', () => config.business.logoUrl, (v) => { config.business.logoUrl = v; renderHeader(); }));
 
-      // All text labels
       const labelDefs = [
-        ['Step: Customer Info title', 'stepCustomer'],
+        ['Step: Customer Info title',  'stepCustomer'],
+        ['Step: Choose Stamp title',   'stepStamp'],
         ['Step: Choose Profile title', 'stepProfile'],
-        ['Step: Choose Stamp title', 'stepStamp'],
-        ['Step: Extras title', 'stepOptions'],
-        ['Step: Footage title', 'stepFootage'],
-        ['Step: Notes title', 'stepNotes'],
-        ['Step: Summary title', 'stepSummary'],
-        ['Button: Next', 'btnNext'],
-        ['Button: Back', 'btnBack'],
-        ['Button: Send Estimate', 'btnSubmit'],
-        ['Button: Print', 'btnPrint'],
-        ['Button: Send to Ops Board', 'btnOps'],
-        ['Field label: Name', 'fieldName'],
-        ['Field label: Email', 'fieldEmail'],
-        ['Field label: Phone', 'fieldPhone'],
-        ['Field label: Address', 'fieldAddress'],
-        ['Field label: Footage', 'fieldFootage'],
-        ['Field label: Notes', 'fieldNotes'],
-        ['Notes placeholder text', 'fieldNotesPlaceholder'],
-        ['Extras: Cable label', 'labelCable'],
-        ['Extras: Colour label', 'labelColor'],
-        ['Summary row: Customer', 'summaryCustomer'],
-        ['Summary row: Profile', 'summaryProfile'],
-        ['Summary row: Stamp', 'summaryStamp'],
-        ['Summary row: Cable', 'summaryCable'],
-        ['Summary row: Colour', 'summaryColor'],
-        ['Summary row: Footage', 'summaryFootage'],
-        ['Summary row: Price per foot', 'summaryPerFoot'],
-        ['Summary row: Total price', 'summaryTotal'],
-        ['Summary row: Notes', 'summaryNotes'],
+        ['Step: Extras title',         'stepOptions'],
+        ['Step: Footage title',        'stepFootage'],
+        ['Step: Notes title',          'stepNotes'],
+        ['Step: Summary title',        'stepSummary'],
+        ['Button: Next',               'btnNext'],
+        ['Button: Back',               'btnBack'],
+        ['Button: Send Estimate',      'btnSubmit'],
+        ['Button: Print',              'btnPrint'],
+        ['Button: Send to Ops Board',  'btnOps'],
+        ['Field label: Name',          'fieldName'],
+        ['Field label: Email',         'fieldEmail'],
+        ['Field label: Phone',         'fieldPhone'],
+        ['Field label: Address',       'fieldAddress'],
+        ['Field label: Footage',       'fieldFootage'],
+        ['Field label: Notes',         'fieldNotes'],
+        ['Notes placeholder text',     'fieldNotesPlaceholder'],
+        ['Extras: Cable label',        'labelCable'],
+        ['Extras: Color label',        'labelColor'],
+        ['Extras: Integral Color label','labelIntegralColor'],
+        ['Summary row: Customer',      'summaryCustomer'],
+        ['Summary row: Stamp',         'summaryStamp'],
+        ['Summary row: Profile',       'summaryProfile'],
+        ['Summary row: Cable',         'summaryCable'],
+        ['Summary row: Color',         'summaryColor'],
+        ['Summary row: Integral Color','summaryIntegralColor'],
+        ['Summary row: Footage',       'summaryFootage'],
+        ['Summary row: Price per foot','summaryPerFoot'],
+        ['Summary row: Total price',   'summaryTotal'],
+        ['Summary row: Notes',         'summaryNotes'],
       ];
       labelDefs.forEach(([displayName, key]) => {
         const row = document.createElement('div');
@@ -1166,9 +1267,9 @@
         row.appendChild(inp);
         contentSec.appendChild(row);
       });
-
       content.appendChild(contentSec);
-      // Advanced settings collapsible
+
+      // ── ADVANCED ─────────────────────────────────────────────────────────
       const adv = document.createElement('div');
       adv.className = 'admin-section';
       const details = document.createElement('details');
@@ -1176,6 +1277,7 @@
       summary.textContent = 'Advanced Configuration';
       details.appendChild(summary);
       const advWrap = document.createElement('div');
+
       // PIN change
       const pinRow = document.createElement('div');
       pinRow.className = 'field';
@@ -1199,7 +1301,17 @@
       pinRow.appendChild(pinInp);
       pinRow.appendChild(pinBtn);
       advWrap.appendChild(pinRow);
-      // feature toggles
+
+      // Feature toggles
+      const featureLabels = {
+        enableCable:         'Cable Option',
+        enableColor:         'Color Option',
+        enableIntegralColor: 'Integral Color Option',
+        enableNotes:         'Notes Step',
+        enablePrint:         'Print Button',
+        enableEmail:         'Send Estimate Button',
+        multiRun:            'Multi-Run Mode'
+      };
       Object.keys(config.features).forEach(key => {
         const row = document.createElement('div');
         row.className = 'field';
@@ -1208,26 +1320,27 @@
         cb.checked = config.features[key];
         cb.onchange = () => { config.features[key] = cb.checked; };
         const lbl = document.createElement('label');
-        lbl.textContent = key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
+        lbl.textContent = featureLabels[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
         row.appendChild(cb);
         row.appendChild(lbl);
         advWrap.appendChild(row);
       });
-      // Import/export and reset
+
+      // Import / Export / Reset / Portable HTML
       const tools = document.createElement('div');
       tools.className = 'toolbar';
+
       const exportBtn = document.createElement('button');
       exportBtn.textContent = 'Export Config';
       exportBtn.onclick = () => {
         const data = JSON.stringify(config, null, 2);
         const blob = new Blob([data], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'config.json';
-        a.click();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url; a.download = 'config.json'; a.click();
         URL.revokeObjectURL(url);
       };
+
       const importBtn = document.createElement('button');
       importBtn.textContent = 'Import Config';
       importBtn.onclick = () => {
@@ -1241,10 +1354,10 @@
           reader.onload = (ev) => {
             try {
               const obj = JSON.parse(ev.target.result);
-              config = Object.assign({}, defaultConfig, obj);
+              config = deepMerge(defaultConfig, obj);
               saveConfig();
               renderHeader();
-              alert('Config imported');
+              alert('Config imported successfully.');
             } catch (err) {
               alert('Invalid config file');
             }
@@ -1254,6 +1367,7 @@
         };
         inp.click();
       };
+
       const resetBtn = document.createElement('button');
       resetBtn.textContent = 'Restore Defaults';
       resetBtn.onclick = () => {
@@ -1264,8 +1378,8 @@
           renderAdminPanel();
         }
       };
+
       // Export Portable HTML — bakes current config into a standalone file
-      // that works on any device without needing localStorage. (FIX-001)
       const portableBtn = document.createElement('button');
       portableBtn.textContent = 'Export Portable HTML';
       portableBtn.style.background = '#2d7a31';
@@ -1273,20 +1387,17 @@
         try {
           const liveConfig = JSON.stringify(config, null, 10);
           const source = document.documentElement.outerHTML;
-          // Replace the defaultConfig block with the current live config so the
-          // downloaded file opens with all settings baked in on any device.
           const marker = /const defaultConfig\s*=\s*\{[\s\S]*?\}\s*;\s*(?=\/\/\s*Storage)/;
           if (!marker.test(source)) {
             alert('Could not locate config block in source. Export failed.');
             return;
           }
-          const patched = source.replace(marker,
-            'const defaultConfig = ' + liveConfig + ';\n\n    ');
+          const patched = source.replace(marker, 'const defaultConfig = ' + liveConfig + ';\n\n    ');
           const blob = new Blob([patched], { type: 'text/html' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
+          const url  = URL.createObjectURL(blob);
+          const a    = document.createElement('a');
           a.href = url;
-          const today = new Date().toISOString().slice(0,10);
+          const today = new Date().toISOString().slice(0, 10);
           a.download = 'gnb-configurator-' + today + '.html';
           a.click();
           URL.revokeObjectURL(url);
@@ -1294,6 +1405,7 @@
           alert('Export failed: ' + err.message);
         }
       };
+
       tools.appendChild(exportBtn);
       tools.appendChild(importBtn);
       tools.appendChild(resetBtn);
@@ -1302,7 +1414,8 @@
       details.appendChild(advWrap);
       adv.appendChild(details);
       content.appendChild(adv);
-      // save & close buttons
+
+      // Save & Close
       const actions = document.createElement('div');
       actions.className = 'btn-row';
       const saveBtn = document.createElement('button');
@@ -1322,9 +1435,6 @@
     }
 
     function saveConfig() {
-      // Persist configuration only if storage is available.  When running
-      // locally on a device where localStorage is disabled the config will
-      // remain in memory for the current session.
       if (storageAvailable) {
         try {
           localStorage.setItem('config', JSON.stringify(config));
@@ -1336,7 +1446,6 @@
 
     // Event listeners
     document.getElementById('adminBtn').addEventListener('click', openAdmin);
-    // Close modal when clicking outside content
     document.getElementById('adminModal').addEventListener('click', (e) => {
       if (e.target === document.getElementById('adminModal')) {
         adminUnlocked = false;
