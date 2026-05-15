@@ -211,7 +211,246 @@
       padding: 0.4rem 0.6rem;
       font-size: 0.9rem;
     }
+
+    /* ══════════════════════════════════
+       JOB SHEET OVERLAY
+    ══════════════════════════════════ */
+    #jobSheetOverlay {
+      position: fixed;
+      inset: 0;
+      background: #F4F5F7;
+      z-index: 200;
+      display: none;
+      flex-direction: column;
+      font-family: 'Barlow', sans-serif;
+      color: #1A202C;
+      overflow-y: auto;
+    }
+    #jobSheetOverlay.open { display: flex; }
+    .js-topbar {
+      background: #2D3748;
+      color: #fff;
+      padding: 0 16px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+    .js-topbar-title {
+      font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+      font-weight: 900;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .js-topbar-title span { color: #2E7D4F; }
+    .js-topbar-actions { display: flex; gap: 8px; }
+    .js-topbar-btn {
+      padding: 7px 13px;
+      border-radius: 6px;
+      border: 2px solid rgba(255,255,255,.25);
+      background: transparent;
+      font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+      font-weight: 700;
+      font-size: .82rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      cursor: pointer;
+      color: #fff;
+      transition: all .18s;
+    }
+    .js-topbar-btn.green { background: #2E7D4F; border-color: #2E7D4F; }
+    .js-topbar-btn.blue  { background: #1B6CA8; border-color: #1B6CA8; }
+    .js-body {
+      padding: 16px 16px 100px;
+      max-width: 640px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .js-section {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+    .js-section-hdr {
+      font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+      font-weight: 800;
+      font-size: .95rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #2D3748;
+      border-bottom: 2px solid #DDE1E9;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+    }
+    .js-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .js-row.full { grid-template-columns: 1fr; }
+    .js-lbl {
+      display: block;
+      font-size: .78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: #718096;
+      margin-bottom: 5px;
+    }
+    .js-inp {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #DDE1E9;
+      border-radius: 8px;
+      font-family: 'Barlow', sans-serif;
+      font-size: .95rem;
+      background: #fff;
+      transition: border-color .2s;
+      box-sizing: border-box;
+    }
+    .js-inp:focus { outline: none; border-color: #2E7D4F; }
+    textarea.js-inp { resize: vertical; min-height: 80px; }
+    .js-type-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .js-type-btn {
+      padding: 10px 4px;
+      border: 2px solid #DDE1E9;
+      border-radius: 8px;
+      background: #fff;
+      font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+      font-weight: 700;
+      font-size: .82rem;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-align: center;
+      transition: all .18s;
+      color: #1A202C;
+    }
+    .js-type-btn.hw.sel  { background: #E8F2FA; border-color: #1B6CA8; color: #144F7D; }
+    .js-type-btn.con.sel { background: #E8F5EE; border-color: #2E7D4F; color: #1F5935; }
+    .js-type-btn.nc.sel  { background: #FDF8E8; border-color: #B8860B; color: #8B6508; }
+    .js-color-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .js-color-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 10px;
+      background: #E8F5EE;
+      border: 1.5px solid #2E7D4F;
+      border-radius: 16px;
+      font-size: .8rem;
+      font-weight: 600;
+      color: #1F5935;
+    }
+    .js-run-item {
+      display: grid;
+      grid-template-columns: 1fr 80px 32px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .js-run-item input {
+      padding: 8px 10px;
+      border: 2px solid #DDE1E9;
+      border-radius: 8px;
+      font-family: 'Barlow', sans-serif;
+      font-size: .88rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .js-run-item input:focus { outline: none; border-color: #2E7D4F; }
+    .js-run-remove {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: #FFF0F0;
+      color: #C0392B;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .js-run-add {
+      padding: 8px;
+      border: 1.5px dashed #DDE1E9;
+      border-radius: 8px;
+      background: transparent;
+      width: 100%;
+      font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+      font-weight: 700;
+      font-size: .82rem;
+      text-transform: uppercase;
+      color: #718096;
+      cursor: pointer;
+      transition: all .18s;
+    }
+    .js-run-add:hover { border-color: #2E7D4F; color: #2E7D4F; background: #E8F5EE; }
+    .js-checklist { display: flex; flex-direction: column; gap: 6px; }
+    .js-check-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: #F4F5F7;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .js-check-item.done { background: #E8F5EE; }
+    .js-check-box {
+      width: 18px; height: 18px;
+      border-radius: 4px;
+      border: 2px solid #DDE1E9;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .7rem;
+      transition: all .15s;
+    }
+    .js-check-item.done .js-check-box { background: #2E7D4F; border-color: #2E7D4F; color: #fff; }
+    .js-check-label { font-size: .88rem; font-weight: 500; flex: 1; }
+    .js-check-item.done .js-check-label { text-decoration: line-through; color: #718096; }
+    .js-boss-section {
+      border-left: 3px solid #B8860B !important;
+      background: #FDF8E8 !important;
+    }
+    .js-boss-hdr { color: #8B6508 !important; border-bottom-color: #B8860B !important; }
+    .js-status-pill {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+      font-weight: 700;
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      cursor: pointer;
+      border: 2px solid #DDE1E9;
+      background: #E8F2FA;
+      color: #144F7D;
+      border-color: #1B6CA8;
+    }
+    @media print {
+      #jobSheetOverlay .js-topbar { display: none !important; }
+      #jobSheetOverlay { position: static !important; overflow: visible !important; }
+      body > *:not(#jobSheetOverlay) { display: none !important; }
+      #jobSheetOverlay { display: block !important; }
+    }
   </style>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <header>
@@ -223,6 +462,18 @@
   </header>
   <main id="app"></main>
   <button id="adminBtn" title="Admin">⚙</button>
+
+  <!-- Job Sheet Overlay -->
+  <div id="jobSheetOverlay">
+    <div class="js-topbar">
+      <div class="js-topbar-title">GNB <span>Job Sheet</span></div>
+      <div class="js-topbar-actions">
+        <button class="js-topbar-btn" onclick="closeJobSheet()">✕ Close</button>
+        <button class="js-topbar-btn blue" onclick="window.print()">🖨 Print</button>
+      </div>
+    </div>
+    <div class="js-body" id="jobSheetBody"></div>
+  </div>
   <!-- Admin modal -->
   <div id="adminModal">
     <div class="admin-content" id="adminContent"></div>
@@ -774,6 +1025,13 @@
         };
         nav.appendChild(sendBtn);
       }
+      // ── GENERATE JOB SHEET ──
+      const jobSheetBtn = document.createElement('button');
+      jobSheetBtn.textContent = '📄 Generate Job Sheet';
+      jobSheetBtn.style.background = '#2E7D4F';
+      jobSheetBtn.onclick = () => { openJobSheet(pricing, prof, stp); };
+      nav.appendChild(jobSheetBtn);
+
       // ── SUBMIT TO GNB OPS ──
       const opsBtn = document.createElement('button');
       opsBtn.textContent = config.labels.btnOps || '📋 Send to Ops Board';
@@ -849,6 +1107,469 @@
         if (opsBtn) { opsBtn.disabled = false; opsBtn.textContent = config.labels.btnOps || '📋 Send to Ops Board'; }
         alert('Failed to send: ' + err.message + '\n\nMake sure the Webhook URL is correct in Admin settings.');
       });
+    }
+
+    // ════════════════════════════════════════════
+    // JOB SHEET
+    // ════════════════════════════════════════════
+
+    // Default GNB equipment and checklists (mirrors Code.gs initSheets defaults)
+    const GNB_EQUIPMENT   = ['Mixer','Edger','Stamp Tools','Colorant','Cable','Sprayer','Sealer','Curing Compound','Water Tank','Forms/Stakes'];
+    const GNB_SOD         = ['Mixer loaded','Stamps loaded','Colorant loaded','Cable stocked','Water tank full','Forms & stakes onboard','Hand tools packed','Safety gear onboard'];
+    const GNB_EOD         = ['Mixer cleaned','Stamps cleaned & stored','Leftover material secured','Tools returned','Site cleaned','Photos taken','Invoice notes updated'];
+    const GNB_DEF_COLORS  = ['Buff','Charcoal','Terra Cotta','Slate Grey','Desert Tan','Sandstone'];
+
+    // Job sheet state (separate from configurator state)
+    let jsState = {};
+
+    function openJobSheet(pricing, prof, stp) {
+      // Build initial job sheet state from configurator data
+      const colorTags = [];
+      if (state.color)         colorTags.push('Color');
+      if (state.integralColor) colorTags.push('Integral Color');
+
+      jsState = {
+        // Auto-filled from configurator
+        name:         state.customer.name    || '',
+        phone:        state.customer.phone   || '',
+        email:        state.customer.email   || '',
+        address:      state.customer.address || '',
+        stamp:        stp  ? stp.name  + (stp.rate > 0  ? ' — ' + formatCurrency(stp.rate) + '/ft' : '') : '',
+        profile:      prof ? prof.name + (prof.price > 0 ? ' (+' + formatCurrency(prof.price) + '/ft)' : '') : '',
+        footage:      state.footage || '',
+        estimate:     formatCurrency(pricing.total),
+        pricePerFoot: formatCurrency(pricing.perFoot),
+        colorPalette: colorTags,
+        preNotes:     state.notes || '',
+        // Blank fields for crew to fill in
+        type:         'hw',
+        date:         '',
+        crew:         '',
+        access:       '',
+        deposit:      false,
+        depositAmt:   '',
+        runs:         [],
+        prepWork:     '',
+        prepAmount:   '',
+        bossNotes:    '',
+        postNotes:    '',
+        equipment:    {},
+        sodDone:      {},
+        eodDone:      {}
+      };
+
+      renderJobSheet();
+      document.getElementById('jobSheetOverlay').classList.add('open');
+      document.getElementById('jobSheetOverlay').scrollTop = 0;
+    }
+
+    function closeJobSheet() {
+      document.getElementById('jobSheetOverlay').classList.remove('open');
+    }
+
+    function jsEsc(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function renderJobSheet() {
+      const j = jsState;
+      const body = document.getElementById('jobSheetBody');
+      body.innerHTML = '';
+
+      // ── Job Type ──
+      const typeSection = document.createElement('div');
+      typeSection.className = 'js-section';
+      typeSection.innerHTML = '<div class="js-section-hdr">Job Type</div>';
+      const typeSelector = document.createElement('div');
+      typeSelector.className = 'js-type-selector';
+      [['hw','Homeowner'],['con','Contractor'],['nc','Carve']].forEach(([t, label]) => {
+        const btn = document.createElement('button');
+        btn.className = 'js-type-btn ' + t + (j.type === t ? ' sel' : '');
+        btn.textContent = label;
+        btn.onclick = () => { j.type = t; renderJobSheet(); };
+        typeSelector.appendChild(btn);
+      });
+      typeSection.appendChild(typeSelector);
+      body.appendChild(typeSection);
+
+      // ── Customer Info ──
+      const custSection = document.createElement('div');
+      custSection.className = 'js-section';
+      custSection.innerHTML = '<div class="js-section-hdr">Customer Info</div>';
+      function jsField(labelText, key, type, placeholder, fullRow) {
+        const wrap = document.createElement('div');
+        wrap.className = 'js-row' + (fullRow ? ' full' : '');
+        const inner = document.createElement('div');
+        const lbl = document.createElement('label');
+        lbl.className = 'js-lbl';
+        lbl.textContent = labelText;
+        const inp = document.createElement('input');
+        inp.className = 'js-inp';
+        inp.type = type || 'text';
+        inp.value = j[key] || '';
+        if (placeholder) inp.placeholder = placeholder;
+        inp.oninput = () => { j[key] = inp.value; };
+        inner.appendChild(lbl);
+        inner.appendChild(inp);
+        wrap.appendChild(inner);
+        return wrap;
+      }
+      const custRow1 = document.createElement('div');
+      custRow1.className = 'js-row';
+      const nameDiv = document.createElement('div');
+      nameDiv.innerHTML = '<label class="js-lbl">Name</label>';
+      const nameInp = document.createElement('input');
+      nameInp.className = 'js-inp'; nameInp.type = 'text'; nameInp.value = j.name || '';
+      nameInp.oninput = () => { j.name = nameInp.value; };
+      nameDiv.appendChild(nameInp);
+      const phoneDiv = document.createElement('div');
+      phoneDiv.innerHTML = '<label class="js-lbl">Phone</label>';
+      const phoneInp = document.createElement('input');
+      phoneInp.className = 'js-inp'; phoneInp.type = 'tel'; phoneInp.value = j.phone || '';
+      phoneInp.oninput = () => { j.phone = phoneInp.value; };
+      phoneDiv.appendChild(phoneInp);
+      custRow1.appendChild(nameDiv);
+      custRow1.appendChild(phoneDiv);
+      custSection.appendChild(custRow1);
+
+      const custRow2 = document.createElement('div');
+      custRow2.className = 'js-row';
+      const emailDiv = document.createElement('div');
+      emailDiv.innerHTML = '<label class="js-lbl">Email</label>';
+      const emailInp = document.createElement('input');
+      emailInp.className = 'js-inp'; emailInp.type = 'email'; emailInp.value = j.email || '';
+      emailInp.oninput = () => { j.email = emailInp.value; };
+      emailDiv.appendChild(emailInp);
+      const dateDiv = document.createElement('div');
+      dateDiv.innerHTML = '<label class="js-lbl">Scheduled Date</label>';
+      const dateInp = document.createElement('input');
+      dateInp.className = 'js-inp'; dateInp.type = 'date'; dateInp.value = j.date || '';
+      dateInp.oninput = () => { j.date = dateInp.value; };
+      dateDiv.appendChild(dateInp);
+      custRow2.appendChild(emailDiv);
+      custRow2.appendChild(dateDiv);
+      custSection.appendChild(custRow2);
+
+      const addrRow = document.createElement('div');
+      addrRow.className = 'js-row full';
+      const addrDiv = document.createElement('div');
+      addrDiv.innerHTML = '<label class="js-lbl">Property Address</label>';
+      const addrInp = document.createElement('input');
+      addrInp.className = 'js-inp'; addrInp.value = j.address || '';
+      addrInp.oninput = () => { j.address = addrInp.value; };
+      addrDiv.appendChild(addrInp);
+      addrRow.appendChild(addrDiv);
+      custSection.appendChild(addrRow);
+
+      const accessRow = document.createElement('div');
+      accessRow.className = 'js-row full';
+      const accessDiv = document.createElement('div');
+      accessDiv.innerHTML = '<label class="js-lbl">Gate / Access Notes</label>';
+      const accessInp = document.createElement('input');
+      accessInp.className = 'js-inp'; accessInp.value = j.access || '';
+      accessInp.placeholder = 'Gate code, parking, access point...';
+      accessInp.oninput = () => { j.access = accessInp.value; };
+      accessDiv.appendChild(accessInp);
+      accessRow.appendChild(accessDiv);
+      custSection.appendChild(accessRow);
+      body.appendChild(custSection);
+
+      // ── Job Details ──
+      const detailSection = document.createElement('div');
+      detailSection.className = 'js-section';
+      detailSection.innerHTML = '<div class="js-section-hdr">Job Details</div>';
+
+      const detRow1 = document.createElement('div');
+      detRow1.className = 'js-row';
+      const stampDiv = document.createElement('div');
+      stampDiv.innerHTML = '<label class="js-lbl">Stamp / Style</label>';
+      const stampInp = document.createElement('input');
+      stampInp.className = 'js-inp'; stampInp.value = j.stamp || '';
+      stampInp.oninput = () => { j.stamp = stampInp.value; };
+      stampDiv.appendChild(stampInp);
+      const footageDiv = document.createElement('div');
+      footageDiv.innerHTML = '<label class="js-lbl">Total Linear Footage</label>';
+      const footageInp = document.createElement('input');
+      footageInp.className = 'js-inp'; footageInp.type = 'number'; footageInp.value = j.footage || '';
+      footageInp.oninput = () => { j.footage = footageInp.value; };
+      footageDiv.appendChild(footageInp);
+      detRow1.appendChild(stampDiv);
+      detRow1.appendChild(footageDiv);
+      detailSection.appendChild(detRow1);
+
+      const detRow2 = document.createElement('div');
+      detRow2.className = 'js-row';
+      const profileDiv = document.createElement('div');
+      profileDiv.innerHTML = '<label class="js-lbl">Profile</label>';
+      const profileInp = document.createElement('input');
+      profileInp.className = 'js-inp'; profileInp.value = j.profile || '';
+      profileInp.oninput = () => { j.profile = profileInp.value; };
+      profileDiv.appendChild(profileInp);
+      const estDiv = document.createElement('div');
+      estDiv.innerHTML = '<label class="js-lbl">Estimate Total</label>';
+      const estInp = document.createElement('input');
+      estInp.className = 'js-inp'; estInp.value = j.estimate || '';
+      estInp.oninput = () => { j.estimate = estInp.value; };
+      estDiv.appendChild(estInp);
+      detRow2.appendChild(profileDiv);
+      detRow2.appendChild(estDiv);
+      detailSection.appendChild(detRow2);
+
+      const detRow3 = document.createElement('div');
+      detRow3.className = 'js-row';
+      const pricePFDiv = document.createElement('div');
+      pricePFDiv.innerHTML = '<label class="js-lbl">Price Per Foot</label>';
+      const pricePFInp = document.createElement('input');
+      pricePFInp.className = 'js-inp'; pricePFInp.value = j.pricePerFoot || '';
+      pricePFInp.oninput = () => { j.pricePerFoot = pricePFInp.value; };
+      pricePFDiv.appendChild(pricePFInp);
+      const crewDiv = document.createElement('div');
+      crewDiv.innerHTML = '<label class="js-lbl">Crew Assigned</label>';
+      const crewInp = document.createElement('input');
+      crewInp.className = 'js-inp'; crewInp.value = j.crew || '';
+      crewInp.placeholder = 'Names or initials';
+      crewInp.oninput = () => { j.crew = crewInp.value; };
+      crewDiv.appendChild(crewInp);
+      detRow3.appendChild(pricePFDiv);
+      detRow3.appendChild(crewDiv);
+      detailSection.appendChild(detRow3);
+
+      const detRow4 = document.createElement('div');
+      detRow4.className = 'js-row';
+      const depDiv = document.createElement('div');
+      depDiv.innerHTML = '<label class="js-lbl">Deposit Collected</label>';
+      const depSel = document.createElement('select');
+      depSel.className = 'js-inp';
+      depSel.innerHTML = '<option value="false">No</option><option value="true">Yes</option>';
+      depSel.value = j.deposit ? 'true' : 'false';
+      depSel.onchange = () => { j.deposit = depSel.value === 'true'; };
+      depDiv.appendChild(depSel);
+      const depAmtDiv = document.createElement('div');
+      depAmtDiv.innerHTML = '<label class="js-lbl">Deposit Amount</label>';
+      const depAmtInp = document.createElement('input');
+      depAmtInp.className = 'js-inp'; depAmtInp.value = j.depositAmt || '';
+      depAmtInp.placeholder = '$0.00';
+      depAmtInp.oninput = () => { j.depositAmt = depAmtInp.value; };
+      depAmtDiv.appendChild(depAmtInp);
+      detRow4.appendChild(depDiv);
+      detRow4.appendChild(depAmtDiv);
+      detailSection.appendChild(detRow4);
+      body.appendChild(detailSection);
+
+      // ── Color Palette ──
+      const colorSection = document.createElement('div');
+      colorSection.className = 'js-section';
+      colorSection.innerHTML = '<div class="js-section-hdr">Color Palette</div>';
+      const colorTagsDiv = document.createElement('div');
+      colorTagsDiv.className = 'js-color-tags';
+      (j.colorPalette || []).forEach((c, i) => {
+        const tag = document.createElement('span');
+        tag.className = 'js-color-tag';
+        tag.textContent = c;
+        const tagX = document.createElement('span');
+        tagX.style.cssText = 'cursor:pointer;margin-left:4px;opacity:.6;';
+        tagX.textContent = '×';
+        (function(idx){ tagX.onclick = function(){ jsRemoveColor(idx); }; })(i);
+        tag.appendChild(tagX);
+        colorTagsDiv.appendChild(tag);
+      });
+      const addColorBtn = document.createElement('span');
+      addColorBtn.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#F4F5F7;border:1.5px dashed #DDE1E9;border-radius:16px;font-size:.8rem;font-weight:600;color:#718096;cursor:pointer;';
+      addColorBtn.textContent = '+ Add Color';
+      addColorBtn.onclick = () => {
+        const c = prompt('Enter color name:');
+        if (c && c.trim()) { j.colorPalette.push(c.trim()); renderJobSheet(); }
+      };
+      colorTagsDiv.appendChild(addColorBtn);
+      colorSection.appendChild(colorTagsDiv);
+      // Quick-add default colors not already in palette
+      const suggDiv = document.createElement('div');
+      suggDiv.style.cssText = 'margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;';
+      GNB_DEF_COLORS.filter(c => !(j.colorPalette||[]).includes(c)).forEach(c => {
+        const btn = document.createElement('button');
+        btn.style.cssText = 'padding:4px 8px;border:1px solid #DDE1E9;border-radius:12px;background:#fff;font-size:.75rem;cursor:pointer;color:#1A202C;';
+        btn.textContent = c;
+        btn.onclick = () => { j.colorPalette.push(c); renderJobSheet(); };
+        suggDiv.appendChild(btn);
+      });
+      colorSection.appendChild(suggDiv);
+      body.appendChild(colorSection);
+
+      // ── Runs ──
+      const runsSection = document.createElement('div');
+      runsSection.className = 'js-section';
+      runsSection.innerHTML = '<div class="js-section-hdr">Runs <span style="font-size:.72rem;font-weight:500;color:#718096;text-transform:none;letter-spacing:0;">Where each section goes</span></div>';
+      const runsContainer = document.createElement('div');
+      runsContainer.id = 'jsRunsContainer';
+      (j.runs || []).forEach((r, i) => {
+        runsContainer.appendChild(jsRunRow(r, i));
+      });
+      runsSection.appendChild(runsContainer);
+      const addRunBtn = document.createElement('button');
+      addRunBtn.className = 'js-run-add';
+      addRunBtn.textContent = '+ Add Run';
+      addRunBtn.onclick = () => { j.runs.push({ description: '', footage: '' }); renderJobSheet(); };
+      runsSection.appendChild(addRunBtn);
+      body.appendChild(runsSection);
+
+      // ── Prep Work ──
+      const prepSection = document.createElement('div');
+      prepSection.className = 'js-section';
+      prepSection.innerHTML = '<div class="js-section-hdr">Prep Work</div>';
+      const prepRow1 = document.createElement('div');
+      prepRow1.className = 'js-row full';
+      const prepDiv = document.createElement('div');
+      prepDiv.innerHTML = '<label class="js-lbl">What prep is needed?</label>';
+      const prepTa = document.createElement('textarea');
+      prepTa.className = 'js-inp'; prepTa.value = j.prepWork || '';
+      prepTa.placeholder = 'Remove old border, grade soil, clear landscaping...';
+      prepTa.oninput = () => { j.prepWork = prepTa.value; };
+      prepDiv.appendChild(prepTa);
+      prepRow1.appendChild(prepDiv);
+      prepSection.appendChild(prepRow1);
+      const prepRow2 = document.createElement('div');
+      prepRow2.className = 'js-row full';
+      const prepAmtDiv = document.createElement('div');
+      prepAmtDiv.innerHTML = '<label class="js-lbl">Prep Amount / Hours</label>';
+      const prepAmtInp = document.createElement('input');
+      prepAmtInp.className = 'js-inp'; prepAmtInp.value = j.prepAmount || '';
+      prepAmtInp.placeholder = 'e.g. 4 hours, $200, half day';
+      prepAmtInp.oninput = () => { j.prepAmount = prepAmtInp.value; };
+      prepAmtDiv.appendChild(prepAmtInp);
+      prepRow2.appendChild(prepAmtDiv);
+      prepSection.appendChild(prepRow2);
+      body.appendChild(prepSection);
+
+      // ── Boss Notes ──
+      const bossSection = document.createElement('div');
+      bossSection.className = 'js-section js-boss-section';
+      bossSection.innerHTML = '<div class="js-section-hdr js-boss-hdr">Boss Notes</div>';
+      const bossRow = document.createElement('div');
+      bossRow.className = 'js-row full';
+      const bossDiv = document.createElement('div');
+      const bossTa = document.createElement('textarea');
+      bossTa.className = 'js-inp'; bossTa.style.minHeight = '100px'; bossTa.style.background = '#fff';
+      bossTa.value = j.bossNotes || '';
+      bossTa.placeholder = 'Anything extra — special instructions, reminders, flags...';
+      bossTa.oninput = () => { j.bossNotes = bossTa.value; };
+      bossDiv.appendChild(bossTa);
+      bossRow.appendChild(bossDiv);
+      bossSection.appendChild(bossRow);
+      body.appendChild(bossSection);
+
+      // ── Notes ──
+      const notesSection = document.createElement('div');
+      notesSection.className = 'js-section';
+      notesSection.innerHTML = '<div class="js-section-hdr">Notes</div>';
+      const preRow = document.createElement('div');
+      preRow.className = 'js-row full';
+      const preDiv = document.createElement('div');
+      preDiv.innerHTML = '<label class="js-lbl">Pre-Job Notes</label>';
+      const preTa = document.createElement('textarea');
+      preTa.className = 'js-inp'; preTa.value = j.preNotes || '';
+      preTa.placeholder = 'Site conditions, customer requests, flags...';
+      preTa.oninput = () => { j.preNotes = preTa.value; };
+      preDiv.appendChild(preTa);
+      preRow.appendChild(preDiv);
+      notesSection.appendChild(preRow);
+      const postRow = document.createElement('div');
+      postRow.className = 'js-row full';
+      const postDiv = document.createElement('div');
+      postDiv.innerHTML = '<label class="js-lbl">Post-Job Notes</label>';
+      const postTa = document.createElement('textarea');
+      postTa.className = 'js-inp'; postTa.value = j.postNotes || '';
+      postTa.placeholder = 'What happened, issues, follow-up needed...';
+      postTa.oninput = () => { j.postNotes = postTa.value; };
+      postDiv.appendChild(postTa);
+      postRow.appendChild(postDiv);
+      notesSection.appendChild(postRow);
+      body.appendChild(notesSection);
+
+      // ── Equipment Checklist ──
+      const eqSection = document.createElement('div');
+      eqSection.className = 'js-section';
+      eqSection.innerHTML = '<div class="js-section-hdr">Equipment Checklist</div>';
+      const eqList = document.createElement('div');
+      eqList.className = 'js-checklist';
+      GNB_EQUIPMENT.forEach(e => {
+        const item = document.createElement('div');
+        item.className = 'js-check-item' + (j.equipment && j.equipment[e] ? ' done' : '');
+        item.innerHTML = '<div class="js-check-box">' + (j.equipment && j.equipment[e] ? '✓' : '') + '</div><div class="js-check-label">' + jsEsc(e) + '</div>';
+        item.onclick = () => {
+          if (!j.equipment) j.equipment = {};
+          j.equipment[e] = !j.equipment[e];
+          item.classList.toggle('done');
+          item.querySelector('.js-check-box').textContent = j.equipment[e] ? '✓' : '';
+        };
+        eqList.appendChild(item);
+      });
+      eqSection.appendChild(eqList);
+      body.appendChild(eqSection);
+
+      // ── Start of Day ──
+      const sodSection = document.createElement('div');
+      sodSection.className = 'js-section';
+      sodSection.innerHTML = '<div class="js-section-hdr">Start of Day</div>';
+      const sodList = document.createElement('div');
+      sodList.className = 'js-checklist';
+      GNB_SOD.forEach((c, i) => {
+        const item = document.createElement('div');
+        item.className = 'js-check-item' + (j.sodDone && j.sodDone[i] ? ' done' : '');
+        item.innerHTML = '<div class="js-check-box">' + (j.sodDone && j.sodDone[i] ? '✓' : '') + '</div><div class="js-check-label">' + jsEsc(c) + '</div>';
+        item.onclick = () => {
+          if (!j.sodDone) j.sodDone = {};
+          j.sodDone[i] = !j.sodDone[i];
+          item.classList.toggle('done');
+          item.querySelector('.js-check-box').textContent = j.sodDone[i] ? '✓' : '';
+        };
+        sodList.appendChild(item);
+      });
+      sodSection.appendChild(sodList);
+      body.appendChild(sodSection);
+
+      // ── End of Day ──
+      const eodSection = document.createElement('div');
+      eodSection.className = 'js-section';
+      eodSection.innerHTML = '<div class="js-section-hdr">End of Day</div>';
+      const eodList = document.createElement('div');
+      eodList.className = 'js-checklist';
+      GNB_EOD.forEach((c, i) => {
+        const item = document.createElement('div');
+        item.className = 'js-check-item' + (j.eodDone && j.eodDone[i] ? ' done' : '');
+        item.innerHTML = '<div class="js-check-box">' + (j.eodDone && j.eodDone[i] ? '✓' : '') + '</div><div class="js-check-label">' + jsEsc(c) + '</div>';
+        item.onclick = () => {
+          if (!j.eodDone) j.eodDone = {};
+          j.eodDone[i] = !j.eodDone[i];
+          item.classList.toggle('done');
+          item.querySelector('.js-check-box').textContent = j.eodDone[i] ? '✓' : '';
+        };
+        eodList.appendChild(item);
+      });
+      eodSection.appendChild(eodList);
+      body.appendChild(eodSection);
+    }
+
+    function jsRunRow(r, i) {
+      const row = document.createElement('div');
+      row.className = 'js-run-item';
+      const descInp = document.createElement('input');
+      descInp.placeholder = 'Description (e.g. front walkway)';
+      descInp.value = r.description || '';
+      descInp.oninput = () => { jsState.runs[i].description = descInp.value; };
+      const ftInp = document.createElement('input');
+      ftInp.type = 'number'; ftInp.placeholder = 'Feet';
+      ftInp.value = r.footage || '';
+      ftInp.oninput = () => { jsState.runs[i].footage = ftInp.value; };
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'js-run-remove'; removeBtn.textContent = '×';
+      removeBtn.onclick = () => { jsState.runs.splice(i, 1); renderJobSheet(); };
+      row.appendChild(descInp); row.appendChild(ftInp); row.appendChild(removeBtn);
+      return row;
+    }
+
+    function jsRemoveColor(i) {
+      jsState.colorPalette.splice(i, 1);
+      renderJobSheet();
     }
 
     // ════════════════════════════════════════════
